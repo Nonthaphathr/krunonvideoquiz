@@ -157,8 +157,19 @@ table.tb td{padding:10px 12px;border-bottom:1px solid #f0f1f4}
 .tip .cd{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,var(--a1),var(--a2));transform-origin:left}
 .tip.show .cd{animation:cd 9s linear forwards}
 @keyframes cd{to{transform:scaleX(0)}}
-.tip .mas{width:clamp(62px,16%,86px);flex:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35));animation:bob 2.2s ease-in-out infinite;transform-origin:bottom center}
+.tip .mas{width:clamp(60px,18vw,78px);flex:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35));animation:bob 2.2s ease-in-out infinite;transform-origin:bottom center}
 @keyframes bob{50%{transform:translateY(-6px) rotate(-2deg)}}
+.notes{position:absolute;z-index:4;top:12px;right:12px;display:none;align-items:center;gap:6px;border:0;border-radius:99px;padding:6px 12px 6px 10px;font-size:12.5px;font-weight:600;color:var(--deep);background:rgba(255,255,255,.93);box-shadow:0 8px 20px -8px rgba(0,0,0,.5);transition:opacity .4s,transform .2s}
+.notes.show{display:flex}
+.notes:hover{transform:translateY(-1px)}
+.notes .n{font-style:normal;min-width:19px;height:19px;border-radius:99px;display:grid;place-items:center;font-size:11px;color:#fff;background:linear-gradient(135deg,var(--a1),var(--a2))}
+.notes.pop{animation:npop .7s cubic-bezier(.2,1.4,.3,1)}
+@keyframes npop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.15)}}
+.stage.idle:not(.paused) .notes{opacity:.55}
+.stage.busy .notes{display:none}
+.nlist{display:flex;flex-direction:column;gap:8px;margin:10px 0;max-height:46vh;overflow:auto}
+.nitem{display:flex;gap:10px;align-items:center;text-align:left;width:100%;padding:10px 12px;border:2px solid var(--line);background:#fff;border-radius:14px;font:inherit;color:inherit;transition:.2s}
+.nitem:hover{border-color:var(--a1);background:var(--soft);transform:translateX(3px)}
 .qalert{position:absolute;z-index:4;left:50%;top:14px;transform:translate(-50%,-30px);opacity:0;pointer-events:none;background:linear-gradient(135deg,var(--a1),var(--a2));color:#fff;font-weight:600;font-size:14px;padding:7px 16px;border-radius:99px;box-shadow:0 10px 24px -8px var(--a2);white-space:nowrap}
 .qalert.go{animation:qa 1.15s ease both}
 @keyframes qa{15%,80%{opacity:1;transform:translate(-50%,0) scale(1.05)}50%{transform:translate(-50%,0) scale(.98)}100%{opacity:0;transform:translate(-50%,-14px)}}
@@ -405,7 +416,7 @@ function loadYT(){
 function mountPlayer(root,P,opts){
   opts=opts||{};
   const preview=!!opts.preview, vid=ytId(P.videoId||P.videoUrl);
-  const S={done:{},ans:{},tries:{},beeped:{},cur:null,max:0,dur:0,ready:false,ended:false,finished:false,saved:false,start:Date.now(),seeking:false,queue:[]};
+  const S={done:{},ans:{},tries:{},beeped:{},seen:[],cur:null,max:0,dur:0,ready:false,ended:false,finished:false,saved:false,start:Date.now(),seeking:false,queue:[]};
   const uidp='yt'+Math.random().toString(36).slice(2,8);
   const port=P.orientation==='portrait';
   const items=()=>sortItems(P.items=P.items||[]);
@@ -422,6 +433,7 @@ function mountPlayer(root,P,opts){
         <button class="cb txt speed">1×</button><button class="cb mute" aria-label="เสียง">${IC.vol}</button><button class="cb fs" aria-label="เต็มจอ">${IC.fs}</button></div>
     </div>
     <div class="qalert">❓ เตรียมตอบคำถาม!</div>
+    <button class="notes" aria-label="อ่านคำอธิบาย">📖 อ่านคำอธิบาย <i class="n">0</i></button>
     <div class="tip"><div class="bub"><button class="x" aria-label="ปิด">✕</button><b>💡 ข้อมูลน่ารู้</b><div class="tx"></div><span class="go">แตะเพื่ออ่าน ▶</span><i class="cd"></i></div><img class="mas" src="mascot.png" alt="" onerror="this.outerHTML='<span style=&quot;font-size:54px&quot;>👨‍🏫</span>'"></div>
     <div class="ov"></div>
   </div>`;
@@ -435,6 +447,20 @@ function mountPlayer(root,P,opts){
     [[784,0],[988,.28],[1319,.56]].forEach(n=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=n[0];o.connect(g);g.connect(a.destination);
       g.gain.setValueAtTime(0,t0+n[1]);g.gain.linearRampToValueAtTime(.3,t0+n[1]+.03);g.gain.exponentialRampToValueAtTime(.001,t0+n[1]+.34);o.start(t0+n[1]);o.stop(t0+n[1]+.36)})}
   function preAlert(){beep();const e=q('.qalert');e.classList.remove('go');void e.offsetWidth;e.classList.add('go')}
+  function sfx(k){ensureAudio();const a=S.ac;if(!a)return;const t0=a.currentTime+.02;
+    const seq={ok:[[659,0,.16],[880,.13,.32]],no:[[233,0,.2,'sawtooth'],[175,.19,.36,'sawtooth']],
+      win:[[523,0,.22],[659,.17,.22],[784,.34,.22],[1047,.52,.75],[784,.52,.75],[659,.52,.75]]}[k];
+    seq.forEach(n=>{const o=a.createOscillator(),g=a.createGain(),ty=n[3]||'sine',v=ty==='sawtooth'?.1:.22;o.type=ty;o.frequency.value=n[0];o.connect(g);g.connect(a.destination);
+      g.gain.setValueAtTime(0,t0+n[1]);g.gain.linearRampToValueAtTime(v,t0+n[1]+.03);g.gain.exponentialRampToValueAtTime(.001,t0+n[1]+n[2]);o.start(t0+n[1]);o.stop(t0+n[1]+n[2]+.03)})}
+  function updNotes(pulse){const b=q('.notes');b.classList.toggle('show',S.seen.length>0);q('.notes .n').textContent=S.seen.length;if(pulse){b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}}
+  function seeInfo(id){if(!S.seen.includes(id)){S.seen.push(id);updNotes(true)}}
+  const noteTitle=i=>(i.title||i.tip||i.body||'').replace(/\*\*/g,'');
+  function noteListHtml(){const list=S.seen.map(id=>items().find(x=>x.id===id)).filter(Boolean).sort((a,b)=>a.t-b.t);
+    return `<div class="ocard"><div class="ch"><span class="chip">📖 คำอธิบายที่ผ่านมา</span><span class="chip ghost">${list.length} รายการ</span></div><div class="nlist">${list.map(i=>`<button class="nitem" data-pa="lst-item" data-id="${i.id}"><span class="chip ghost">⏱ ${fmt(i.t)}</span><span>${esc(noteTitle(i).slice(0,90))}</span></button>`).join('')}</div><div class="oact"><button class="btn pri" data-pa="lst-close">ปิด แล้วดูคลิปต่อ ▶</button></div></div>`}
+  function noteCardHtml(i){return `<div class="ocard"><div class="ch"><span class="chip">💡 ข้อมูลน่ารู้</span><span class="chip ghost">⏱ ${fmt(i.t)}</span></div>${i.title?`<h3>${rich(i.title)}</h3>`:''}${i.image?`<img class="im" src="${esc(i.image)}" alt="">`:''}${i.body?`<p class="bd">${rich(i.body)}</p>`:''}<div class="oact"><button class="btn" data-pa="lst-back">← รายการคำอธิบาย</button><button class="btn pri" data-pa="lst-close">ปิด แล้วดูคลิปต่อ ▶</button></div></div>`}
+  function openList(){if(S.cur||S.finished||!S.seen.length)return;try{S.listWas=yt.getPlayerState()===1;yt.pauseVideo()}catch(e){S.listWas=false}hideTip();S.cur={id:'__list',type:'list'};showOv(noteListHtml())}
+  function closeList(){S.cur=null;hideOv(()=>{if(S.listWas)try{yt.playVideo()}catch(e){}})}
+  q('.notes').onclick=openList;
   const tipEl=q('.tip');let tipT=null,tipIt=null;
   function hideTip(){clearTimeout(tipT);tipEl.classList.remove('show');tipIt=null}
   function showTip(it){hideTip();tipIt=it;q('.tip .tx').textContent=it.tip||it.title||'มีข้อมูลน่ารู้ให้อ่าน';
@@ -498,7 +524,7 @@ function mountPlayer(root,P,opts){
   function submit(it,v){
     if(it.type==='fill'&&!String(v).trim()){toast('พิมพ์คำตอบก่อนนะ');return}
     if(it.type==='multi'&&!(v&&v.length)){toast('เลือกอย่างน้อย 1 ข้อ');return}
-    const ok=check(it,v);
+    const ok=check(it,v);sfx(ok?'ok':'no');
     S.tries[it.id]=(S.tries[it.id]||0)+1;
     if(!S.ans[it.id])S.ans[it.id]={v,ok};
     const mode=it.onWrong||'continue', reveal=ok||mode!=='retry';
@@ -533,6 +559,9 @@ function mountPlayer(root,P,opts){
     else if(pa==='fill'){submit(it,$('#fillv',ov).value)}
     else if(pa==='retry'){showItem(it)}
     else if(pa==='rewind'){S.done[it.id]=false;delete S.beeped[it.id];const to=it.rewindTo!=null?it.rewindTo:Math.max(0,it.t-20);S.hold=Date.now()+900;yt.seekTo(Math.max(0,to),true);S.max=Math.max(S.max,it.t);closeItem(false)}
+    else if(pa==='lst-item'){const i=items().find(x=>x.id===b.dataset.id);if(i)showOv(noteCardHtml(i))}
+    else if(pa==='lst-back'){showOv(noteListHtml())}
+    else if(pa==='lst-close'){closeList()}
     else if(pa==='next'||pa==='skip'){closeItem(true)}
     else if(pa==='again'){restart()}
     else if(pa==='save'){doSave()}
@@ -548,7 +577,7 @@ function mountPlayer(root,P,opts){
     const answers={};qs.forEach(i=>{if(S.ans[i.id])answers[i.id]={a:S.ans[i.id].v,ok:S.ans[i.id].ok}});
     return {score,max,answers,duration:Math.round((Date.now()-S.start)/1000)}}
   function finish(){
-    S.finished=true;hideTip();const r=result(),qs=items().filter(isQ),show=P.showScore!==false&&r.max>0,pc=r.max?Math.round(r.score/r.max*100):100;
+    S.finished=true;hideTip();sfx('win');const r=result(),qs=items().filter(isQ),show=P.showScore!==false&&r.max>0,pc=r.max?Math.round(r.score/r.max*100):100;
     const msg=pc>=80?'ยอดเยี่ยมมาก! 🌟':pc>=50?'ทำได้ดีเลย 👍':'ไม่เป็นไร ลองทบทวนอีกครั้งนะ 💪';
     let h=`<div class="ocard sum"><div class="ch" style="justify-content:center"><span class="chip">🎓 เรียนจบแล้ว</span></div>`;
     if(show){h+=`<div class="ring" id="ring"><div><b id="scn">0</b><small>/ ${r.max} คะแนน</small></div></div><h3>${msg}</h3>`;
@@ -564,7 +593,7 @@ function mountPlayer(root,P,opts){
     r=r||result();const el=$('#svst',ov);if(el)el.textContent='⏳ กำลังบันทึกผล…';
     Promise.resolve(opts.onFinish(r)).then(()=>{const e=$('#svst',ov);if(e)e.innerHTML='✅ บันทึกผลเรียบร้อยแล้ว'})
       .catch(err=>{console.error(err);const e=$('#svst',ov);if(e)e.innerHTML='⚠️ บันทึกผลไม่สำเร็จ <button class="btn sm" data-pa="save">ลองอีกครั้ง</button>'})}
-  function restart(){hideTip();S.beeped={};S.done={};S.tries={};S.ans={};S.max=0;S.ended=false;S.finished=false;S.cur=null;S.queue=[];S.start=Date.now();hideOv(()=>{yt.seekTo(0,true);yt.playVideo()})}
+  function restart(){hideTip();S.seen=[];updNotes();S.beeped={};S.done={};S.tries={};S.ans={};S.max=0;S.ended=false;S.finished=false;S.cur=null;S.queue=[];S.start=Date.now();hideOv(()=>{yt.seekTo(0,true);yt.playVideo()})}
 
   /* ----- main loop ----- */
   function tick(){
@@ -575,14 +604,14 @@ function mountPlayer(root,P,opts){
     if(cur>S.max)S.max=cur;
     ui(cur);
     const list=items();
-    if(preview)list.forEach(it=>{if(S.done[it.id]&&cur<it.t-.8){S.done[it.id]=false;delete S.beeped[it.id]}});
+    if(preview)list.forEach(it=>{if(S.done[it.id]&&cur<it.t-.8){S.done[it.id]=false;delete S.beeped[it.id];if(S.seen.includes(it.id)){S.seen=S.seen.filter(x=>x!==it.id);updNotes()}}});
     for(const it of list){if(it.t>cur+1.05)break;
       if(isQ(it)&&!S.done[it.id]&&!S.beeped[it.id]&&cur<it.t&&it.t-cur<=1.0){S.beeped[it.id]=1;preAlert()}}
     for(const it of list){
       if(it.t>cur+.15)break;
       if(S.done[it.id])continue;
       const gap=cur-it.t;
-      if(it.type==='info'){S.done[it.id]=true;if(gap<=2.5)showTip(it);continue}
+      if(it.type==='info'){S.done[it.id]=true;seeInfo(it.id);if(gap<=2.5)showTip(it);continue}
       if(gap>1.6&&it.required===false){S.done[it.id]='skip';continue}
       if(gap>1.6&&!preview)yt.seekTo(it.t,true);
       showItem(it);return;

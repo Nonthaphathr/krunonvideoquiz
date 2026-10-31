@@ -143,10 +143,25 @@ table.tb td{padding:10px 12px;border-bottom:1px solid #f0f1f4}
 .pl:fullscreen .stage{border-radius:0;box-shadow:none}
 .pl:fullscreen .stage.landscape{width:min(100vw,calc(100vh*16/9))}
 .pl:fullscreen .stage.portrait{height:100vh}
-.yt{position:absolute;inset:0;z-index:0;pointer-events:none}
+.yt{position:absolute;left:0;right:0;top:-96px;bottom:-96px;z-index:0;pointer-events:none}
 .yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-.stage.portrait .yt{inset:0 auto 0 50%;width:316.05%;transform:translateX(-50%)}
 .shield{position:absolute;inset:0;z-index:1;cursor:pointer}
+.tip{position:absolute;z-index:4;right:10px;bottom:74px;display:flex;align-items:flex-end;gap:2px;max-width:92%;transform:translateX(120%);opacity:0;pointer-events:none;transition:transform .7s cubic-bezier(.2,1.25,.3,1),opacity .35s}
+.tip.show{transform:none;opacity:1;pointer-events:auto}
+.tip .bub{position:relative;cursor:pointer;background:rgba(255,255,255,.97);border-radius:18px 18px 4px 18px;padding:10px 12px 12px;width:min(230px,52vw);box-shadow:0 14px 34px -10px rgba(0,0,0,.5);color:var(--ink);overflow:hidden;margin-bottom:26px;transition:.2s}
+.tip .bub:hover{transform:translateY(-2px)}
+.tip .bub b{display:block;font-size:11.5px;color:var(--deep);font-weight:600;margin-bottom:2px}
+.tip .bub .tx{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13.5px;line-height:1.35;font-weight:500}
+.tip .bub .go{display:inline-block;margin-top:7px;font-size:12px;font-weight:600;color:#fff;padding:3px 11px;border-radius:99px;background:linear-gradient(135deg,var(--a1),var(--a2))}
+.tip .bub .x{position:absolute;right:5px;top:3px;border:0;background:transparent;color:#9aa0ad;font-size:15px;line-height:1;padding:3px 5px}
+.tip .cd{position:absolute;left:0;bottom:0;height:3px;width:100%;background:linear-gradient(90deg,var(--a1),var(--a2));transform-origin:left}
+.tip.show .cd{animation:cd 9s linear forwards}
+@keyframes cd{to{transform:scaleX(0)}}
+.tip .mas{width:clamp(62px,16%,86px);flex:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.35));animation:bob 2.2s ease-in-out infinite;transform-origin:bottom center}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-2deg)}}
+.qalert{position:absolute;z-index:4;left:50%;top:14px;transform:translate(-50%,-30px);opacity:0;pointer-events:none;background:linear-gradient(135deg,var(--a1),var(--a2));color:#fff;font-weight:600;font-size:14px;padding:7px 16px;border-radius:99px;box-shadow:0 10px 24px -8px var(--a2);white-space:nowrap}
+.qalert.go{animation:qa 1.15s ease both}
+@keyframes qa{15%,80%{opacity:1;transform:translate(-50%,0) scale(1.05)}50%{transform:translate(-50%,0) scale(.98)}100%{opacity:0;transform:translate(-50%,-14px)}}
 .bigplay{position:absolute;z-index:2;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border:0;border-radius:50%;color:#fff;display:grid;place-items:center;
 background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 0 0 color-mix(in srgb,var(--a1) 60%,transparent),0 18px 40px -10px rgba(0,0,0,.5);
 opacity:0;transform:scale(.7);pointer-events:none;transition:.3s cubic-bezier(.2,.9,.3,1.3)}
@@ -390,7 +405,7 @@ function loadYT(){
 function mountPlayer(root,P,opts){
   opts=opts||{};
   const preview=!!opts.preview, vid=ytId(P.videoId||P.videoUrl);
-  const S={done:{},ans:{},tries:{},cur:null,max:0,dur:0,ready:false,ended:false,finished:false,saved:false,start:Date.now(),seeking:false,queue:[]};
+  const S={done:{},ans:{},tries:{},beeped:{},cur:null,max:0,dur:0,ready:false,ended:false,finished:false,saved:false,start:Date.now(),seeking:false,queue:[]};
   const uidp='yt'+Math.random().toString(36).slice(2,8);
   const port=P.orientation==='portrait';
   const items=()=>sortItems(P.items=P.items||[]);
@@ -406,11 +421,27 @@ function mountPlayer(root,P,opts){
       <div class="crow"><button class="cb play" aria-label="เล่น/หยุด">${IC.play}</button><span><b class="t1">0:00</b> / <span class="t2">0:00</span></span><span class="sp"></span>
         <button class="cb txt speed">1×</button><button class="cb mute" aria-label="เสียง">${IC.vol}</button><button class="cb fs" aria-label="เต็มจอ">${IC.fs}</button></div>
     </div>
+    <div class="qalert">❓ เตรียมตอบคำถาม!</div>
+    <div class="tip"><div class="bub"><button class="x" aria-label="ปิด">✕</button><b>💡 ข้อมูลน่ารู้</b><div class="tx"></div><span class="go">แตะเพื่ออ่าน ▶</span><i class="cd"></i></div><img class="mas" src="mascot.png" alt="" onerror="this.outerHTML='<span style=&quot;font-size:54px&quot;>👨‍🏫</span>'"></div>
     <div class="ov"></div>
   </div>`;
   const stage=$('.stage',root), ov=$('.ov',root), q=s=>$(s,root);
   if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled))q('.fs').style.display='none';
   if(!vid){stage.insertAdjacentHTML('beforeend','<div class="err"><div><div style="font-size:34px">🎬</div>ยังไม่ได้ใส่ลิงก์วิดีโอ YouTube</div></div>');}
+
+  /* ----- เสียงเตือน + การ์ตูนชวนอ่าน ----- */
+  function ensureAudio(){try{if(!S.ac){const AC=window.AudioContext||window.webkitAudioContext;if(AC)S.ac=new AC()}if(S.ac&&S.ac.state==='suspended')S.ac.resume()}catch(e){}}
+  function beep(){ensureAudio();const a=S.ac;if(!a)return;const t0=a.currentTime+.02;
+    [[784,0],[988,.28],[1319,.56]].forEach(n=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=n[0];o.connect(g);g.connect(a.destination);
+      g.gain.setValueAtTime(0,t0+n[1]);g.gain.linearRampToValueAtTime(.3,t0+n[1]+.03);g.gain.exponentialRampToValueAtTime(.001,t0+n[1]+.34);o.start(t0+n[1]);o.stop(t0+n[1]+.36)})}
+  function preAlert(){beep();const e=q('.qalert');e.classList.remove('go');void e.offsetWidth;e.classList.add('go')}
+  const tipEl=q('.tip');let tipT=null,tipIt=null;
+  function hideTip(){clearTimeout(tipT);tipEl.classList.remove('show');tipIt=null}
+  function showTip(it){hideTip();tipIt=it;q('.tip .tx').textContent=it.tip||it.title||'มีข้อมูลน่ารู้ให้อ่าน';
+    const cd=q('.tip .cd');cd.style.animation='none';void cd.offsetWidth;cd.style.animation='';
+    tipEl.classList.remove('show');void tipEl.offsetWidth;tipEl.classList.add('show');tipT=setTimeout(hideTip,9000)}
+  q('.tip .bub').onclick=()=>{if(!tipIt||S.cur)return;const it=tipIt;hideTip();S.done[it.id]=true;showItem(it)};
+  q('.tip .x').onclick=e=>{e.stopPropagation();hideTip()};
 
   /* ----- UI sync ----- */
   function renderMarks(){const d=S.dur;q('.marks').innerHTML=d?items().map(it=>`<i class="mk ${isQ(it)?'q':'i'}" style="left:${Math.min(100,it.t/d*100)}%" title="${esc(it.title||'')}"></i>`).join(''):''}
@@ -418,7 +449,7 @@ function mountPlayer(root,P,opts){
   function setState(st){const playing=st===1||st===3;stage.classList.toggle('paused',!playing);q('.play').innerHTML=playing?IC.pause:IC.play;if(playing)wake();else stage.classList.remove('idle')}
   function wake(){stage.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>stage.classList.add('idle'),2600)}
   stage.addEventListener('pointermove',wake);
-  function toggle(){if(!yt||!S.ready||S.cur)return;const st=yt.getPlayerState();if(st===1||st===3)yt.pauseVideo();else{if(S.ended){S.ended=false}yt.playVideo()}}
+  function toggle(){ensureAudio();if(!yt||!S.ready||S.cur)return;const st=yt.getPlayerState();if(st===1||st===3)yt.pauseVideo();else{if(S.ended){S.ended=false}yt.playVideo()}}
   q('.shield').onclick=()=>{toggle();wake()};
   q('.bigplay').onclick=toggle;
   q('.play').onclick=toggle;
@@ -448,7 +479,7 @@ function mountPlayer(root,P,opts){
   function itemHead(it){const qs=items().filter(isQ),n=qs.indexOf(it)+1;
     return `<div class="ch"><span class="chip">${isQ(it)?`คำถามข้อ ${n}/${qs.length}`:'💡 ข้อมูลน่ารู้'}</span><span class="chip ghost">⏱ ${fmt(it.t)}</span>${isQ(it)&&pts(it)?`<span class="chip pts">${pts(it)} คะแนน</span>`:''}</div>`}
   function showItem(it){
-    S.cur=it;try{yt&&yt.pauseVideo()}catch(e){}
+    hideTip();S.cur=it;try{yt&&yt.pauseVideo()}catch(e){}
     let h=`<div class="ocard">${itemHead(it)}${it.title?`<h3>${rich(it.title)}</h3>`:''}${it.image?`<img class="im" src="${esc(it.image)}" alt="">`:''}${it.body?`<p class="bd">${rich(it.body)}</p>`:''}`;
     if(it.type==='info'){h+=`<div class="oact"><button class="btn pri" data-pa="next">${esc(it.btn||'ไปต่อ')} ▶</button></div>`}
     else if(it.type==='fill'){h+=`<div class="fillw"><input class="inp" id="fillv" placeholder="พิมพ์คำตอบ…" autocomplete="off"><button class="btn pri" data-pa="fill">ตรวจ</button></div><div class="fbw"></div><div class="oact"></div>`}
@@ -501,7 +532,7 @@ function mountPlayer(root,P,opts){
     if(pa==='multi'){submit(it,$$('.opt.sel',ov).map(x=>+x.dataset.i))}
     else if(pa==='fill'){submit(it,$('#fillv',ov).value)}
     else if(pa==='retry'){showItem(it)}
-    else if(pa==='rewind'){S.done[it.id]=false;const to=it.rewindTo!=null?it.rewindTo:Math.max(0,it.t-20);S.hold=Date.now()+900;yt.seekTo(Math.max(0,to),true);S.max=Math.max(S.max,it.t);closeItem(false)}
+    else if(pa==='rewind'){S.done[it.id]=false;delete S.beeped[it.id];const to=it.rewindTo!=null?it.rewindTo:Math.max(0,it.t-20);S.hold=Date.now()+900;yt.seekTo(Math.max(0,to),true);S.max=Math.max(S.max,it.t);closeItem(false)}
     else if(pa==='next'||pa==='skip'){closeItem(true)}
     else if(pa==='again'){restart()}
     else if(pa==='save'){doSave()}
@@ -517,7 +548,7 @@ function mountPlayer(root,P,opts){
     const answers={};qs.forEach(i=>{if(S.ans[i.id])answers[i.id]={a:S.ans[i.id].v,ok:S.ans[i.id].ok}});
     return {score,max,answers,duration:Math.round((Date.now()-S.start)/1000)}}
   function finish(){
-    S.finished=true;const r=result(),qs=items().filter(isQ),show=P.showScore!==false&&r.max>0,pc=r.max?Math.round(r.score/r.max*100):100;
+    S.finished=true;hideTip();const r=result(),qs=items().filter(isQ),show=P.showScore!==false&&r.max>0,pc=r.max?Math.round(r.score/r.max*100):100;
     const msg=pc>=80?'ยอดเยี่ยมมาก! 🌟':pc>=50?'ทำได้ดีเลย 👍':'ไม่เป็นไร ลองทบทวนอีกครั้งนะ 💪';
     let h=`<div class="ocard sum"><div class="ch" style="justify-content:center"><span class="chip">🎓 เรียนจบแล้ว</span></div>`;
     if(show){h+=`<div class="ring" id="ring"><div><b id="scn">0</b><small>/ ${r.max} คะแนน</small></div></div><h3>${msg}</h3>`;
@@ -533,7 +564,7 @@ function mountPlayer(root,P,opts){
     r=r||result();const el=$('#svst',ov);if(el)el.textContent='⏳ กำลังบันทึกผล…';
     Promise.resolve(opts.onFinish(r)).then(()=>{const e=$('#svst',ov);if(e)e.innerHTML='✅ บันทึกผลเรียบร้อยแล้ว'})
       .catch(err=>{console.error(err);const e=$('#svst',ov);if(e)e.innerHTML='⚠️ บันทึกผลไม่สำเร็จ <button class="btn sm" data-pa="save">ลองอีกครั้ง</button>'})}
-  function restart(){S.done={};S.tries={};S.ans={};S.max=0;S.ended=false;S.finished=false;S.cur=null;S.queue=[];S.start=Date.now();hideOv(()=>{yt.seekTo(0,true);yt.playVideo()})}
+  function restart(){hideTip();S.beeped={};S.done={};S.tries={};S.ans={};S.max=0;S.ended=false;S.finished=false;S.cur=null;S.queue=[];S.start=Date.now();hideOv(()=>{yt.seekTo(0,true);yt.playVideo()})}
 
   /* ----- main loop ----- */
   function tick(){
@@ -544,11 +575,14 @@ function mountPlayer(root,P,opts){
     if(cur>S.max)S.max=cur;
     ui(cur);
     const list=items();
-    if(preview)list.forEach(it=>{if(S.done[it.id]&&cur<it.t-.8)S.done[it.id]=false});
+    if(preview)list.forEach(it=>{if(S.done[it.id]&&cur<it.t-.8){S.done[it.id]=false;delete S.beeped[it.id]}});
+    for(const it of list){if(it.t>cur+1.05)break;
+      if(isQ(it)&&!S.done[it.id]&&!S.beeped[it.id]&&cur<it.t&&it.t-cur<=1.0){S.beeped[it.id]=1;preAlert()}}
     for(const it of list){
       if(it.t>cur+.15)break;
       if(S.done[it.id])continue;
       const gap=cur-it.t;
+      if(it.type==='info'){S.done[it.id]=true;if(gap<=2.5)showTip(it);continue}
       if(gap>1.6&&it.required===false){S.done[it.id]='skip';continue}
       if(gap>1.6&&!preview)yt.seekTo(it.t,true);
       showItem(it);return;
@@ -559,20 +593,21 @@ function mountPlayer(root,P,opts){
     seek:t=>{if(yt&&S.ready)yt.seekTo(Math.max(0,t),true)},
     play:()=>yt&&S.ready&&yt.playVideo(),pause:()=>yt&&S.ready&&yt.pauseVideo(),
     showItem:it=>{if(S.cur)return;showItem(it)},
+    showTip:it=>{if(S.cur)return;showTip(it)},
     refresh:()=>{renderMarks()},
     reset:()=>{S.done={};renderMarks()},
-    destroy:()=>{dead=true;clearInterval(poll);clearTimeout(idleT);document.removeEventListener('keydown',onKey);try{yt&&yt.destroy()}catch(e){}root.innerHTML='';root.classList.remove('pl')}
+    destroy:()=>{dead=true;clearInterval(poll);clearTimeout(tipT);try{S.ac&&S.ac.close()}catch(e){}clearTimeout(idleT);document.removeEventListener('keydown',onKey);try{yt&&yt.destroy()}catch(e){}root.innerHTML='';root.classList.remove('pl')}
   };
 
   if(vid)loadYT().then(()=>{
     if(dead)return;
-    const vars={controls:0,rel:0,modestbranding:1,playsinline:1,fs:0,disablekb:1,iv_load_policy:3,cc_load_policy:0};
+    const vars={controls:0,rel:0,modestbranding:1,playsinline:1,fs:0,disablekb:1,iv_load_policy:3,cc_load_policy:0,hl:'th',color:'white'};
     if(/^https?:/.test(location.protocol))vars.origin=location.origin;
     yt=new YT.Player(uidp,{videoId:vid,playerVars:vars,events:{
-      onReady:()=>{S.ready=true;S.dur=yt.getDuration()||0;renderMarks();ui(0);poll=setInterval(tick,140);opts.onReady&&opts.onReady(S.api)},
-      onStateChange:e=>{setState(e.data);
+      onReady:()=>{try{yt.unloadModule('captions');yt.unloadModule('cc')}catch(e){}S.ready=true;S.dur=yt.getDuration()||0;renderMarks();ui(0);poll=setInterval(tick,140);opts.onReady&&opts.onReady(S.api)},
+      onStateChange:e=>{setState(e.data);if(e.data===1&&!S.ccoff){S.ccoff=1;try{yt.unloadModule('captions');yt.unloadModule('cc')}catch(x){}}
         if(e.data===0&&!S.finished&&!S.cur){S.ended=true;
-          const d=S.dur||yt.getDuration();const rest=items().filter(it=>!S.done[it.id]&&it.t>=d-2.5);
+          const d=S.dur||yt.getDuration();const rest=items().filter(it=>isQ(it)&&!S.done[it.id]&&it.t>=d-2.5);
           if(preview){return}
           S.queue=rest;if(S.queue.length)showItem(S.queue.shift());else finish()}},
       onError:e=>{stage.insertAdjacentHTML('beforeend',`<div class="err"><div><div style="font-size:34px">⚠️</div>เล่นวิดีโอนี้ไม่ได้ (รหัส ${e.data})<br><small>ตรวจว่าวิดีโอเป็น “ไม่เป็นสาธารณะ/สาธารณะ” และอนุญาตให้ฝัง</small></div></div>`)}
@@ -717,6 +752,7 @@ async function editView(id){
 - ตอบเป็น JSON อย่างเดียว อยู่ในบล็อกโค้ดเดียว ห้ามมีข้อความอื่น
 - t คือเวลาที่ให้คลิปหยุดแล้วแสดงเนื้อหา รูปแบบ "นาที:วินาที" เช่น "1:25" (ควรแทรกหลังจบประเด็นนั้น ๆ)
 - แทรกสลับระหว่างคำอธิบายสรุป (info) และคำถาม ห่างกันอย่างน้อย 20 วินาที
+- info: คำอธิบายสั้นที่ไม่หยุดคลิป (การ์ตูนโผล่มุมจอให้นักเรียนกดอ่าน) ใส่ "tip" เป็นข้อความชวนอ่านสั้น ๆ ไม่เกิน 40 ตัวอักษร
 - ชนิด (type): "info" คำอธิบาย | "mcq" ปรนัยเลือกข้อเดียว | "multi" เลือกหลายข้อ | "tf" ถูก/ผิด | "fill" เติมคำ
 - mcq: options 3-4 ข้อ, answer = เลขข้อที่ถูก เริ่มนับจาก 0
 - multi: answer = อาร์เรย์เลขข้อที่ถูก เช่น [0,2]
@@ -731,7 +767,7 @@ async function editView(id){
  "title": "ชื่อบทเรียน",
  "description": "คำอธิบายสั้น ๆ",
  "items": [
-  {"t":"0:40","type":"info","title":"หัวข้อ","body":"สรุปประเด็นสำคัญ"},
+  {"t":"0:40","type":"info","tip":"เกร็ดน่ารู้!","title":"หัวข้อ","body":"สรุปประเด็นสำคัญ"},
   {"t":"1:25","type":"mcq","title":"โจทย์","options":["ก","ข","ค","ง"],"answer":1,"explain":"เฉลย","points":1,"onWrong":"rewind","rewindTo":"0:50"}
  ]
 }
@@ -758,7 +794,7 @@ async function editView(id){
   ACT.newitem=b=>openItem(null,b.dataset.ty,api?Math.floor(api.getTime()):0);
   ACT.editit=b=>openItem(P.items.find(i=>i.id===b.dataset.id));
   ACT.seekit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);api&&api.seek(it.t)};
-  ACT.showit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);api&&api.showItem(it)};
+  ACT.showit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);if(!api)return;if(it.type==='info')api.showTip(it);else api.showItem(it)};
   ACT.dupit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);P.items.push(Object.assign(JSON.parse(JSON.stringify(it)),{id:'i'+uid8(),t:it.t+5}));sortItems(P.items);mark();api&&api.refresh();itemsPane()};
   ACT.delit=b=>{if(!confirm('ลบจุดแทรกนี้?'))return;P.items=P.items.filter(i=>i.id!==b.dataset.id);mark();api&&api.refresh();itemsPane()};
   ACT.copyprompt=()=>copyText(PROMPT);
@@ -787,7 +823,7 @@ async function editView(id){
       ${q?`<div class="two"><div><label class="f">คะแนน</label><input class="inp" id="m_pt" type="number" min="0" step="1" value="${pts(M)}"></div><div><label class="f">เมื่อตอบผิด</label><select class="inp" id="m_ow"><option value="continue" ${M.onWrong==='continue'?'selected':''}>แสดงเฉลยแล้วไปต่อ</option><option value="retry" ${M.onWrong==='retry'?'selected':''}>ให้ลองตอบใหม่</option><option value="rewind" ${M.onWrong==='rewind'?'selected':''}>ย้อนกลับไปดูคลิปอีกครั้ง</option></select></div></div>
       <div id="m_rw" style="display:${M.onWrong==='rewind'?'block':'none'}"><label class="f">ย้อนไปที่เวลา</label><input class="inp" id="m_rt" value="${fmt(M.rewindTo!=null?M.rewindTo:Math.max(0,M.t-20))}" style="width:110px;text-align:center"></div>
       <label class="f">คำอธิบายเฉลย (แสดงหลังตอบ)</label><textarea class="inp" id="m_ex" style="min-height:70px">${esc(M.explain||'')}</textarea>
-      <label class="sw"><input type="checkbox" id="m_rq" ${M.required!==false?'checked':''}><i></i>บังคับตอบ (กรอข้ามไม่ได้)</label>`:`<label class="f">ข้อความบนปุ่ม</label><input class="inp" id="m_bt" value="${esc(M.btn||'ไปต่อ')}" style="width:200px">`}
+      <label class="sw"><input type="checkbox" id="m_rq" ${M.required!==false?'checked':''}><i></i>บังคับตอบ (กรอข้ามไม่ได้)</label>`:`<label class="f">ข้อความชวนอ่าน (บนการ์ตูน สั้น ๆ — เว้นว่างจะใช้หัวข้อ)</label><input class="inp" id="m_tip" value="${esc(M.tip||'')}" maxlength="60" placeholder="เช่น มีเกร็ดน่ารู้เรื่องสัมผัสนะ!"><div class="hint">คลิปไม่หยุด การ์ตูนจะโผล่มุมจอ 9 วินาที นักเรียนแตะเพื่ออ่าน (ตอนเปิดอ่านคลิปจะหยุด)</div><label class="f">ข้อความบนปุ่มในการ์ดคำอธิบาย</label><input class="inp" id="m_bt" value="${esc(M.btn||'ไปต่อ')}" style="width:200px">`}
       <div class="row" style="margin-top:18px;justify-content:flex-end"><button class="btn" data-act="m-x" type="button">ยกเลิก</button><button class="btn pri" data-act="m-ok" type="button">${isNew?'เพิ่มจุดแทรก':'บันทึก'}</button></div></div>`;
       $('#m_ty',bg).onchange=e=>{collect(true);const old=M.type;M.type=e.target.value;
         if((M.type==='mcq'||M.type==='multi')&&!(M.options&&M.options.length))M.options=['','','',''];
@@ -804,7 +840,7 @@ async function editView(id){
       if(M.type==='mcq'||M.type==='multi'){const rows=$$('.optrow',bg);M.options=rows.map(r=>$('.o_t',r).value);const cs=rows.map((r,i)=>$('.o_c',r).checked?i:-1).filter(i=>i>=0);M.answer=M.type==='mcq'?(cs[0]!=null?cs[0]:0):cs}
       if(M.type==='fill'&&$('#m_fill',bg))M.answer=$('#m_fill',bg).value.split('\n').map(s=>s.trim()).filter(Boolean);
       if(M.type!=='info'){M.points=+(v('#m_pt')||1);M.onWrong=v('#m_ow')||'continue';if(M.onWrong==='rewind')M.rewindTo=parseT(v('#m_rt'));M.explain=(v('#m_ex')||'').trim();const rq=$('#m_rq',bg);M.required=rq?rq.checked:true}
-      else{const bt=(v('#m_bt')||'').trim();if(bt&&bt!=='ไปต่อ')M.btn=bt;else delete M.btn}
+      else{const bt=(v('#m_bt')||'').trim();if(bt&&bt!=='ไปต่อ')M.btn=bt;else delete M.btn;const tp=(v('#m_tip')||'').trim();if(tp)M.tip=tp;else delete M.tip}
     }
     draw();
     bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});
@@ -828,7 +864,7 @@ function normItem(r){
   const type=['info','mcq','multi','tf','fill'].includes(r.type)?r.type:(r.options?'mcq':'info');
   const it={id:r.id||'i'+uid8(),t:parseT(r.t!=null?r.t:(r.time!=null?r.time:0)),type,title:String(r.title||r.question||'').trim(),body:String(r.body||r.text||'').trim()};
   if(r.image)it.image=String(r.image);
-  if(type==='info'){if(r.btn)it.btn=String(r.btn);return it}
+  if(type==='info'){if(r.btn)it.btn=String(r.btn);if(r.tip)it.tip=String(r.tip);return it}
   it.points=r.points!=null&&isFinite(+r.points)?+r.points:1;
   it.explain=String(r.explain||r.explanation||'');
   it.onWrong=['continue','retry','rewind'].includes(r.onWrong)?r.onWrong:'continue';

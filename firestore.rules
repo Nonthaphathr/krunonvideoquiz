@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ครูผู้สร้างบทเรียน (เพิ่มอีเมลครูคนอื่นในรายการนี้ได้)
+    function isTeacher() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['nonthaphathr@gmail.com'];
+    }
+
+    // ตั้งค่าระบบ (โลโก้/favicon/ชื่อระบบ)
+    match /site/config {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    // Project บทเรียน: ใครมีลิงก์ (รหัส) ก็เปิดดูได้, ลิสต์/แก้ไขได้เฉพาะเจ้าของ
+    match /projects/{pid} {
+      allow get: if true;
+      allow list: if isTeacher() && resource.data.owner == request.auth.uid;
+      allow create: if isTeacher() && request.resource.data.owner == request.auth.uid;
+      allow update: if isTeacher() && resource.data.owner == request.auth.uid
+                    && request.resource.data.owner == resource.data.owner;
+      allow delete: if isTeacher() && resource.data.owner == request.auth.uid;
+
+      // ผลการเรียนของนักเรียน: ใครก็ส่งผลได้ แต่ดู/ลบได้เฉพาะเจ้าของ project
+      match /responses/{rid} {
+        allow create: if request.resource.data.keys().hasOnly(['name','extra','score','max','answers','duration','ts'])
+                      && request.resource.data.name is string && request.resource.data.name.size() <= 120
+                      && (!('extra' in request.resource.data) || (request.resource.data.extra is string && request.resource.data.extra.size() <= 120))
+                      && request.resource.data.score is number
+                      && request.resource.data.max is number
+                      && request.resource.data.ts == request.time;
+        allow read, delete: if isTeacher()
+                      && get(/databases/$(database)/documents/projects/$(pid)).data.owner == request.auth.uid;
+      }
+    }
+  }
+}

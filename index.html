@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ระบบสร้าง Interactive E-Learning / Video Quiz</title>
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff8fb8'/%3E%3Cstop offset='1' stop-color='%23e0408a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M26 20v24l20-12z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@property --p{syntax:'<number>';inherits:true;initial-value:0}
+:root{--ink:#1f2330;--mute:#6b7280;--line:#e8eaee;--bg:#f6f7f9;--card:#fff;
+--a1:#ff8fb8;--a2:#e0408a;--soft:#fff0f6;--deep:#be185d;--ok:#16a34a;--bad:#e11d48;--r:18px;
+--shadow:0 12px 32px -14px rgba(31,35,48,.22)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{font-family:'Prompt','Sarabun',system-ui,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.55}
+button{font-family:inherit;cursor:pointer}
+img{max-width:100%}
+.grad{background:linear-gradient(135deg,var(--a1),var(--a2))}
+.gtext{background:linear-gradient(135deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* background */
+body::before,body::after{content:"";position:fixed;z-index:-1;border-radius:50%;filter:blur(70px);opacity:.55;pointer-events:none}
+body::before{width:46vw;height:46vw;left:-12vw;top:-14vw;background:radial-gradient(circle,var(--a1),transparent 68%);animation:float 18s ease-in-out infinite alternate}
+body::after{width:40vw;height:40vw;right:-10vw;bottom:-14vw;background:radial-gradient(circle,#d9dde6,transparent 66%);animation:float 22s ease-in-out infinite alternate-reverse}
+body.bg-white::before,body.bg-white::after{display:none}
+body.bg-white{background:#fff}
+@keyframes float{to{transform:translate(6vw,5vw) scale(1.12)}}
+/* buttons / inputs */
+.btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:9px 16px;font-size:14px;font-weight:500;transition:.2s;white-space:nowrap}
+.btn:hover{border-color:#d5d8df;transform:translateY(-1px);box-shadow:0 6px 16px -8px rgba(31,35,48,.25)}
+.btn:active{transform:none}
+.btn.pri{border:0;color:#fff;background:linear-gradient(135deg,var(--a1),var(--a2));background-size:140% 140%;box-shadow:0 10px 22px -10px var(--a2)}
+.btn.pri:hover{background-position:100% 0;box-shadow:0 14px 26px -10px var(--a2)}
+.btn.soft{background:var(--soft);border-color:transparent;color:var(--deep)}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:10px}
+.btn.icon{padding:8px;border-radius:10px}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.inp,select.inp,textarea.inp{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 13px;font:inherit;color:inherit;transition:.2s;outline:0}
+.inp:focus{border-color:var(--a1);box-shadow:0 0 0 4px color-mix(in srgb,var(--a1) 25%,transparent)}
+textarea.inp{resize:vertical;min-height:84px}
+label.f{display:block;font-size:13px;color:var(--mute);margin:14px 0 6px;font-weight:500}
+.hint{font-size:12.5px;color:var(--mute);margin-top:5px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+.seg{display:inline-flex;background:#eef0f4;border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:7px 14px;font-size:13.5px;color:var(--mute);transition:.2s}
+.seg button.on{background:#fff;color:var(--deep);box-shadow:0 2px 8px -2px rgba(31,35,48,.2);font-weight:500}
+.sw{display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;font-size:14px}
+.sw input{display:none}
+.sw i{width:40px;height:23px;border-radius:99px;background:#d8dbe2;position:relative;transition:.25s;flex:none}
+.sw i::after{content:"";position:absolute;left:3px;top:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw input:checked+i{background:linear-gradient(135deg,var(--a1),var(--a2))}
+.sw input:checked+i::after{transform:translateX(17px)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{width:38px;height:38px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);transition:.2s}
+.swatch.on{box-shadow:0 0 0 3px var(--deep);transform:scale(1.08)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:99px;background:var(--soft);color:var(--deep)}
+.chip.ghost{background:#eef0f4;color:var(--mute)}
+.chip.pts{background:#fff7e0;color:#a16207}
+/* topbar */
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:12px clamp(14px,3vw,32px);background:rgba(255,255,255,.78);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:600;font-size:15px;min-width:0}
+.brand img,.brand .mark{width:38px;height:38px;border-radius:11px;object-fit:contain;flex:none}
+.brand .mark{display:grid;place-items:center;background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 8px 18px -8px var(--a2)}
+.brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#eef0f4}
+.wrap{max-width:1180px;margin:0 auto;padding:26px clamp(14px,3vw,32px) 60px}
+.credit{text-align:center;color:var(--mute);font-size:12.5px;padding:18px 0 28px}
+h1.page{font-size:clamp(22px,3.2vw,30px);margin:6px 0 4px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 22px}
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login .card{width:min(440px,100%);padding:38px 30px;text-align:center;animation:rise .6s cubic-bezier(.2,.8,.2,1)}
+.login .mark{width:68px;height:68px;border-radius:20px;margin:0 auto 16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 16px 30px -12px var(--a2)}
+.login img.lg{width:76px;height:76px;object-fit:contain;margin-bottom:12px}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+/* grid of projects */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.pcard{overflow:hidden;display:flex;flex-direction:column;transition:.25s;animation:rise .5s both}
+.pcard:hover{transform:translateY(-4px);box-shadow:0 22px 40px -18px rgba(31,35,48,.3)}
+.pthumb{aspect-ratio:16/9;background:linear-gradient(135deg,var(--soft),#eef0f4);position:relative;overflow:hidden}
+.pthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pthumb .lg{position:absolute;left:10px;top:10px;width:36px;height:36px;border-radius:10px;background:#fff;padding:3px;object-fit:contain;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.pbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:5px;flex:1}
+.pbody h3{margin:0;font-size:16px;font-weight:600}
+.pbody .cl{color:var(--deep);font-size:13px}
+.pact{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:10px}
+.newcard{border:2px dashed #d9dde6;background:rgba(255,255,255,.6);display:grid;place-items:center;min-height:230px;color:var(--mute);font-weight:500;transition:.25s;text-align:center;cursor:pointer}
+.newcard:hover{border-color:var(--a1);color:var(--deep);background:var(--soft)}
+.newcard b{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;margin:0 auto 10px;color:#fff;font-size:28px;background:linear-gradient(135deg,var(--a1),var(--a2))}
+/* editor */
+.ed{display:grid;grid-template-columns:minmax(320px,46%) 1fr;gap:22px;align-items:start}
+.ed-left{position:sticky;top:78px}
+.prev-bar{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;flex-wrap:wrap}
+.tabs{display:flex;gap:4px;padding:5px;background:#eef0f4;border-radius:14px;margin-bottom:14px;overflow:auto}
+.tabs button{flex:1;border:0;background:transparent;padding:9px 12px;border-radius:10px;color:var(--mute);font-weight:500;font-size:14px;white-space:nowrap;transition:.2s}
+.tabs button.on{background:#fff;color:var(--deep);box-shadow:0 2px 8px -2px rgba(31,35,48,.2)}
+.pane{padding:20px;animation:rise .35s both}
+.logoup{display:flex;align-items:center;gap:14px}
+.logoup .box{width:72px;height:72px;border-radius:18px;border:1px dashed #cfd3dc;background:#fafbfc;display:grid;place-items:center;overflow:hidden;color:#aab0bd;font-size:12px;flex:none}
+.logoup .box img{width:100%;height:100%;object-fit:contain}
+.items{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.irow{display:flex;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;transition:.2s}
+.irow:hover{border-color:var(--a1);transform:translateX(3px)}
+.irow .tm{font-variant-numeric:tabular-nums;font-weight:600;color:var(--deep);background:var(--soft);padding:5px 9px;border-radius:9px;font-size:13px;min-width:56px;text-align:center}
+.irow .tt{flex:1;min-width:0}
+.irow .tt b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.irow .tt small{color:var(--mute)}
+.empty{padding:34px 10px;text-align:center;color:var(--mute)}
+.modal-bg{position:fixed;inset:0;z-index:100;background:rgba(31,35,48,.45);backdrop-filter:blur(6px);display:grid;place-items:center;padding:14px;animation:fade .2s}
+.modal{width:min(720px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:22px;padding:22px 24px 20px;box-shadow:0 30px 70px -20px rgba(0,0,0,.4);animation:pop .35s cubic-bezier(.2,.9,.3,1.15)}
+.modal h2{margin:0 0 4px;font-size:19px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.optrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.optrow input[type=radio],.optrow input[type=checkbox]{accent-color:var(--a2);width:20px;height:20px;flex:none}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:translateY(20px) scale(.96)}}
+table.tb{width:100%;border-collapse:collapse;font-size:14px}
+table.tb th{text-align:left;color:var(--mute);font-weight:500;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafbfc;position:sticky;top:0}
+table.tb td{padding:10px 12px;border-bottom:1px solid #f0f1f4}
+.stat{padding:16px 18px;flex:1;min-width:150px}
+.stat b{font-size:28px;font-weight:600;display:block}
+.bar{height:9px;border-radius:9px;background:#eef0f4;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,var(--a1),var(--a2));transition:width 1s cubic-bezier(.2,.8,.2,1)}
+#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);background:#1f2330;color:#fff;padding:11px 20px;border-radius:14px;font-size:14px;opacity:0;pointer-events:none;transition:.35s;z-index:300;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid #eee;border-top-color:var(--a2);animation:sp .8s linear infinite;margin:60px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.dirty{width:9px;height:9px;border-radius:50%;background:var(--a2);display:none}
+.dirty.on{display:inline-block;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.5);opacity:.5}}
+
+/* ============ PLAYER ============ */
+.pl{display:flex;justify-content:center;align-items:center;width:100%}
+.pl:fullscreen,.pl:-webkit-full-screen{background:#000}
+.stage{position:relative;background:#0c0d12;border-radius:20px;overflow:hidden;box-shadow:0 24px 60px -24px rgba(31,35,48,.55);isolation:isolate;user-select:none;-webkit-user-select:none}
+.stage.landscape{width:100%;aspect-ratio:16/9}
+.stage.portrait{height:min(78vh,760px);aspect-ratio:9/16;max-width:100%}
+.pl:fullscreen .stage{border-radius:0;box-shadow:none}
+.pl:fullscreen .stage.landscape{width:min(100vw,calc(100vh*16/9))}
+.pl:fullscreen .stage.portrait{height:100vh}
+.yt{position:absolute;inset:0;z-index:0;pointer-events:none}
+.yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.stage.portrait .yt{inset:0 auto 0 50%;width:316.05%;transform:translateX(-50%)}
+.shield{position:absolute;inset:0;z-index:1;cursor:pointer}
+.bigplay{position:absolute;z-index:2;left:50%;top:50%;width:84px;height:84px;margin:-42px 0 0 -42px;border:0;border-radius:50%;color:#fff;display:grid;place-items:center;
+background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 0 0 color-mix(in srgb,var(--a1) 60%,transparent),0 18px 40px -10px rgba(0,0,0,.5);
+opacity:0;transform:scale(.7);pointer-events:none;transition:.3s cubic-bezier(.2,.9,.3,1.3)}
+.stage.paused:not(.busy) .bigplay{opacity:1;transform:none;pointer-events:auto;animation:ring 2.2s infinite}
+@keyframes ring{70%{box-shadow:0 0 0 22px transparent,0 18px 40px -10px rgba(0,0,0,.5)}100%{box-shadow:0 0 0 0 transparent,0 18px 40px -10px rgba(0,0,0,.5)}}
+.ctrl{position:absolute;z-index:3;left:0;right:0;bottom:0;padding:34px 14px 10px;color:#fff;background:linear-gradient(transparent,rgba(8,9,14,.78));transition:.35s}
+.stage.idle:not(.paused) .ctrl{opacity:0;transform:translateY(10px)}
+.stage.busy .ctrl{opacity:0;pointer-events:none}
+.seekw{position:relative;height:22px;display:flex;align-items:center}
+.track{position:absolute;left:0;right:0;height:5px;border-radius:5px;background:rgba(255,255,255,.28);transition:height .15s}
+.seekw:hover .track{height:8px}
+.prog{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,var(--a1),var(--a2));width:0}
+.marks{position:absolute;inset:0}
+.mk{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--a2)}
+.mk.i{background:#cfd3dc;box-shadow:0 0 0 2px #7b8190}
+.seek{position:absolute;inset:0;width:100%;margin:0;opacity:0;cursor:pointer;height:22px}
+.crow{display:flex;align-items:center;gap:6px;font-size:13px;font-variant-numeric:tabular-nums}
+.cb{border:0;background:transparent;color:#fff;width:36px;height:34px;border-radius:10px;display:grid;place-items:center;transition:.2s;font-size:13px;font-weight:500}
+.cb:hover{background:rgba(255,255,255,.18)}
+.cb.txt{width:auto;padding:0 10px}
+.ov{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;padding:clamp(10px,3%,26px);overflow:auto;
+background:linear-gradient(135deg,rgba(255,143,184,.55),rgba(224,64,138,.42),rgba(120,130,160,.5));background-size:300% 300%;backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);animation:bgshift 9s ease infinite}
+.ov.show{display:flex}
+.ov.show .ocard{animation:cardin .55s cubic-bezier(.2,.9,.25,1.12) both}
+.ov.out{animation:fade .2s reverse forwards}
+@keyframes bgshift{50%{background-position:100% 100%}}
+@keyframes cardin{from{opacity:0;transform:translateY(34px) scale(.92)}to{opacity:1;transform:none}}
+.ocard{position:relative;width:min(560px,100%);max-height:100%;overflow:auto;background:rgba(255,255,255,.97);border-radius:22px;padding:clamp(16px,3.2vw,26px);box-shadow:0 30px 70px -20px rgba(0,0,0,.45);color:var(--ink);margin:auto}
+.ocard::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--a1),var(--a2),var(--a1));background-size:200% 100%;animation:slide 3s linear infinite}
+@keyframes slide{to{background-position:-200% 0}}
+.ocard .ch{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.ocard h3{margin:2px 0 8px;font-size:clamp(17px,2.6vw,21px);line-height:1.4;font-weight:600}
+.ocard .bd{color:#454a59;margin:0 0 12px}
+.ocard .im{width:100%;max-height:200px;object-fit:contain;border-radius:14px;margin-bottom:12px;background:#f6f7f9}
+.opts{display:flex;flex-direction:column;gap:9px;margin:12px 0}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:11px 13px;border:2px solid var(--line);background:#fff;border-radius:15px;font-size:15px;color:var(--ink);transition:.22s;opacity:0;animation:optin .45s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:calc(var(--n)*70ms + 180ms)}
+@keyframes optin{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.opt:hover:not([disabled]){border-color:var(--a1);background:var(--soft);transform:translateX(4px)}
+.opt .k{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:#eef0f4;font-weight:600;color:var(--mute);transition:.2s;font-size:14px}
+.opt.sel{border-color:var(--a2);background:var(--soft)}
+.opt.sel .k{background:linear-gradient(135deg,var(--a1),var(--a2));color:#fff}
+.opt.right{border-color:var(--ok);background:#ecfdf3}
+.opt.right .k{background:var(--ok);color:#fff}
+.opt.wrong{border-color:var(--bad);background:#fff1f2;animation:shake .45s}
+.opt.wrong .k{background:var(--bad);color:#fff}
+.opt[disabled]{cursor:default}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.fillw{display:flex;gap:8px;margin:12px 0}
+.fb{border-radius:15px;padding:12px 14px;margin:10px 0;font-size:14.5px;animation:rise .4s both}
+.fb.ok{background:#ecfdf3;color:#166534}
+.fb.no{background:#fff1f2;color:#9f1239}
+.fb b{display:block;font-size:16px;margin-bottom:2px}
+.oact{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+.confetti{position:absolute;left:50%;top:40%;pointer-events:none;z-index:9}
+.confetti i{position:absolute;width:9px;height:14px;border-radius:3px;animation:conf 1.1s cubic-bezier(.1,.8,.3,1) forwards}
+@keyframes conf{to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+.sum{text-align:center}
+.ring{--p:0;width:150px;height:150px;border-radius:50%;margin:6px auto 14px;display:grid;place-items:center;transition:--p 1.6s cubic-bezier(.2,.8,.2,1);
+background:conic-gradient(var(--a2) calc(var(--p)*1%),#eceef2 0)}
+.ring div{width:118px;height:118px;border-radius:50%;background:#fff;display:grid;place-items:center;align-content:center}
+.ring b{font-size:34px;line-height:1.1;font-weight:600}
+.ring small{color:var(--mute)}
+.rv{text-align:left;margin:12px 0;max-height:150px;overflow:auto;font-size:13.5px}
+.rv div{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f0f1f4}
+.st{font-size:13px;color:var(--mute);margin:6px 0}
+.err{position:absolute;inset:0;z-index:6;display:grid;place-items:center;color:#fff;text-align:center;padding:20px;background:#15161d}
+/* play page */
+.pg{min-height:100vh;display:flex;flex-direction:column}
+.phead{display:flex;align-items:center;gap:13px;padding:14px clamp(14px,4vw,40px)}
+.phead img,.phead .mark{width:46px;height:46px;border-radius:13px;object-fit:contain;background:#fff;flex:none;box-shadow:0 6px 16px -8px rgba(0,0,0,.25)}
+.phead .mark{display:grid;place-items:center;background:linear-gradient(135deg,var(--a1),var(--a2))}
+.phead .cls{font-size:12.5px;color:var(--deep);font-weight:500}
+.phead .ttl{font-size:clamp(15px,2.4vw,19px);font-weight:600;line-height:1.3}
+.pmain{flex:1;width:min(980px,100%);margin:0 auto;padding:6px clamp(12px,3vw,28px) 10px}
+.pmain.narrow{width:min(520px,100%)}
+.gate{padding:30px clamp(18px,4vw,34px);max-width:480px;margin:30px auto;text-align:center;animation:rise .6s both}
+.gate .big{width:84px;height:84px;object-fit:contain;margin:0 auto 12px;border-radius:22px}
+.gate h2{margin:4px 0 6px;font-size:21px}
+.gate p{color:var(--mute);margin:0 0 6px}
+.gate .inp{text-align:center;margin-top:10px}
+.desc{margin:16px 4px;color:#4b5060}
+.meta{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0 4px}
+@media(max-width:900px){.ed{grid-template-columns:1fr}.ed-left{position:static}.two{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body class="bg-soft">
+<div id="app"><div class="spin"></div></div>
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script>
+/* =====================================================================
+   ระบบสร้าง Interactive E-Learning / Video Quiz
+   พัฒนาโดยครูนนทพัทธ์ หิรัญเรือง
+   ===================================================================== */
+const FB_CONFIG = {
+  apiKey: "AIzaSyB3IePYlzUwMB0-T0es-JR7XrDXtfSv1lI",
+  authDomain: "video-quiz-krunon.firebaseapp.com",
+  projectId: "video-quiz-krunon",
+  storageBucket: "video-quiz-krunon.firebasestorage.app",
+  messagingSenderId: "235626318063",
+  appId: "1:235626318063:web:2a7a4cfd311d2c5886f31a"
+};
+const DEFAULT_SITE_NAME = 'ระบบสร้าง Interactive E-Learning / Video Quiz';
+const CREDIT = 'พัฒนาโดยครูนนทพัทธ์ หิรัญเรือง';
+const ACCENTS = {
+  pink:  {n:'ชมพูหวาน',   a1:'#ff8fb8', a2:'#e0408a', soft:'#fff0f6', deep:'#be185d'},
+  rose:  {n:'โรสแดง',     a1:'#fb8da0', a2:'#e11d48', soft:'#fff1f2', deep:'#be123c'},
+  peach: {n:'พีชพิงค์',    a1:'#fdba74', a2:'#f472b6', soft:'#fff5ee', deep:'#c2410c'},
+  orchid:{n:'ออร์คิด',     a1:'#c4a1ff', a2:'#ec4899', soft:'#faf5ff', deep:'#a21caf'},
+  sky:   {n:'ฟ้าพาสเทล',   a1:'#7dd3fc', a2:'#818cf8', soft:'#f0f9ff', deep:'#4f46e5'},
+  mint:  {n:'มิ้นต์',      a1:'#86efac', a2:'#14b8a6', soft:'#f0fdf9', deep:'#0f766e'}
+};
+const TYPES = {info:'คำอธิบาย', mcq:'ปรนัย (เลือกข้อเดียว)', multi:'เลือกหลายข้อ', tf:'ถูก / ผิด', fill:'เติมคำ'};
+const LETTERS = ['ก','ข','ค','ง','จ','ฉ','ช','ซ'];
+
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rich=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+const fmt=t=>{t=Math.max(0,Math.floor(t||0));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s).padStart(2,'0')};
+const parseT=v=>{if(typeof v==='number')return v;v=String(v==null?'':v).trim();if(/^\d+(\.\d+)?$/.test(v))return +v;const p=v.split(':').map(Number);if(!p.length||p.some(isNaN))return 0;return p.reduce((a,b)=>a*60+b,0)};
+const uid8=()=>{const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';crypto.getRandomValues(new Uint8Array(8)).forEach(x=>s+=a[x%a.length]);return s};
+const ytId=u=>{u=String(u||'').trim();if(/^[\w-]{11}$/.test(u))return u;const m=u.match(/(?:youtu\.be\/|[?&]v=|\/shorts\/|\/embed\/|\/live\/)([\w-]{11})/);return m?m[1]:''};
+const toMs=x=>!x?0:x.toMillis?x.toMillis():(typeof x==='number'?x:0);
+const pts=it=>it.points==null?1:+it.points;
+const isQ=it=>it.type!=='info';
+const sortItems=a=>a.sort((x,y)=>x.t-y.t);
+const norm=s=>String(s==null?'':s).normalize('NFC').replace(/\s+/g,'').toLowerCase();
+function toast(msg,ms=2600){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),ms)}
+function themeVars(P){const a=ACCENTS[P&&P.accent]||ACCENTS.pink;return `--a1:${a.a1};--a2:${a.a2};--soft:${a.soft};--deep:${a.deep}`}
+function applyTheme(P){const a=ACCENTS[P&&P.accent]||ACCENTS.pink;const r=document.documentElement.style;r.setProperty('--a1',a.a1);r.setProperty('--a2',a.a2);r.setProperty('--soft',a.soft);r.setProperty('--deep',a.deep);document.body.className='bg-'+((P&&P.bg)||'soft')}
+const IC={
+ play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+ pause:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>',
+ big:'<svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+ vol:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 4V6L7 10zm13.5 2A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>',
+ mute:'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4h4l5 4V6L7 10zm14.6 2 2.4-2.4-1.4-1.4-2.4 2.4-2.4-2.4-1.4 1.4 2.4 2.4-2.4 2.4 1.4 1.4 2.4-2.4 2.4 2.4 1.4-1.4z"/></svg>',
+ fs:'<svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h5v2H7v3H5zm9 0h5v5h-2V7h-3zM5 14h2v3h3v2H5zm12 0h2v5h-5v-2h3z"/></svg>',
+ logo:'<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>'
+};
+
+/* ---------- image upload -> small dataURL ---------- */
+function fileToDataURL(file,max,square){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej(new Error('อ่านไฟล์ไม่ได้'));
+    fr.onload=()=>{const im=new Image();im.onerror=()=>rej(new Error('ไฟล์ไม่ใช่รูปภาพ'));
+      im.onload=()=>{
+        const k=Math.min(1,max/Math.max(im.width,im.height));
+        let w=Math.round(im.width*k),h=Math.round(im.height*k);
+        const c=document.createElement('canvas');
+        if(square){c.width=c.height=max;const x=c.getContext('2d');const s=Math.min(max/im.width,max/im.height);const dw=im.width*s,dh=im.height*s;x.drawImage(im,(max-dw)/2,(max-dh)/2,dw,dh)}
+        else{c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h)}
+        res(c.toDataURL('image/png'));
+      };im.src=fr.result};
+    fr.readAsDataURL(file);
+  });
+}
+function pickImage(max,square){
+  return new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept='image/*';
+    i.onchange=async()=>{if(!i.files[0])return res(null);try{res(await fileToDataURL(i.files[0],max,square))}catch(e){toast(e.message);res(null)}};i.click()});
+}
+
+/* =====================================================================
+   DATA LAYER  (Firestore  /  โหมดทดลองในเครื่อง ถ้ายังไม่ตั้งค่า Firebase)
+   ===================================================================== */
+const FB_READY = !!(window.firebase && FB_CONFIG.apiKey && !/^YOUR_/.test(FB_CONFIG.apiKey) && FB_CONFIG.projectId);
+
+function makeFirebaseData(){
+  firebase.initializeApp(FB_CONFIG);
+  const db=firebase.firestore(), auth=firebase.auth();
+  const ts=()=>firebase.firestore.FieldValue.serverTimestamp();
+  const conv=d=>Object.assign({id:d.id},d.data());
+  return {
+    mode:'firebase',
+    onUser(cb){return auth.onAuthStateChanged(u=>cb(u?{uid:u.uid,email:u.email,name:u.displayName,photo:u.photoURL}:null))},
+    async signIn(){const p=new firebase.auth.GoogleAuthProvider();
+      try{await auth.signInWithPopup(p)}catch(e){if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment')await auth.signInWithRedirect(p);else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request')throw e}},
+    signOut(){return auth.signOut()},
+    async getSite(){const d=await db.doc('site/config').get();return d.exists?d.data():{}},
+    setSite(o){return db.doc('site/config').set(o,{merge:true})},
+    async listProjects(uid){const q=await db.collection('projects').where('owner','==',uid).get();
+      return q.docs.map(conv).sort((a,b)=>toMs(b.updatedAt)-toMs(a.updatedAt))},
+    async getProject(id){const d=await db.collection('projects').doc(id).get();return d.exists?conv(d):null},
+    async createProject(id,p){const data=Object.assign({},p);delete data.id;data.createdAt=ts();data.updatedAt=ts();await db.collection('projects').doc(id).set(data)},
+    async saveProject(id,p){const data=Object.assign({},p);delete data.id;data.updatedAt=ts();await db.collection('projects').doc(id).set(data)},
+    async deleteProject(id){const col=db.collection('projects').doc(id).collection('responses');
+      const q=await col.get();let b=db.batch(),n=0;
+      for(const d of q.docs){b.delete(d.ref);if(++n%400===0){await b.commit();b=db.batch()}}
+      await b.commit();await db.collection('projects').doc(id).delete()},
+    addResponse(pid,r){return db.collection('projects').doc(pid).collection('responses').add(Object.assign({},r,{ts:ts()}))},
+    async listResponses(pid){const q=await db.collection('projects').doc(pid).collection('responses').orderBy('ts','desc').limit(1000).get();return q.docs.map(conv)}
+  };
+}
+function makeDemoData(){
+  const g=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}, s=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const U={uid:'demo',email:'demo@local',name:'ครู (โหมดทดลอง)',photo:''};
+  return {
+    mode:'demo',
+    onUser(cb){setTimeout(()=>cb(U),0);return()=>{}},
+    async signIn(){}, async signOut(){},
+    async getSite(){return g('vq_demo_site',{})},
+    async setSite(o){s('vq_demo_site',Object.assign(g('vq_demo_site',{}),o))},
+    async listProjects(){const o=g('vq_demo_projects',{});return Object.keys(o).map(k=>Object.assign({id:k},o[k])).sort((a,b)=>toMs(b.updatedAt)-toMs(a.updatedAt))},
+    async getProject(id){const o=g('vq_demo_projects',{});return o[id]?Object.assign({id},o[id]):null},
+    async createProject(id,p){const o=g('vq_demo_projects',{});o[id]=Object.assign({},p,{createdAt:Date.now(),updatedAt:Date.now()});s('vq_demo_projects',o)},
+    async saveProject(id,p){const o=g('vq_demo_projects',{});o[id]=Object.assign({},p,{updatedAt:Date.now()});delete o[id].id;s('vq_demo_projects',o)},
+    async deleteProject(id){const o=g('vq_demo_projects',{});delete o[id];s('vq_demo_projects',o);const r=g('vq_demo_resp',{});delete r[id];s('vq_demo_resp',r)},
+    async addResponse(pid,r){const o=g('vq_demo_resp',{});(o[pid]=o[pid]||[]).push(Object.assign({id:uid8(),ts:Date.now()},r));s('vq_demo_resp',o)},
+    async listResponses(pid){return (g('vq_demo_resp',{})[pid]||[]).slice().reverse()}
+  };
+}
+const Data = FB_READY ? makeFirebaseData() : makeDemoData();
+
+/* ---------- site config (โลโก้/favicon/ชื่อระบบ) ---------- */
+let SITE=(()=>{try{return JSON.parse(localStorage.getItem('vq_site'))||{}}catch(e){return {}}})();
+function setFavicon(url){let l=$('#favicon');if(!l){l=document.createElement('link');l.id='favicon';l.rel='icon';document.head.appendChild(l)}if(url)l.href=url}
+function applySite(){if(SITE.favicon||SITE.logo)setFavicon(SITE.favicon||SITE.logo);if(SITE.name&&!applySite.keepTitle&&!/^#\/play\//.test(location.hash))document.title=SITE.name}
+async function loadSite(){try{const s=await Data.getSite();SITE=s||{};localStorage.setItem('vq_site',JSON.stringify(SITE));applySite()}catch(e){}}
+const siteName=()=>SITE.name||DEFAULT_SITE_NAME;
+const markHtml=()=>SITE.logo?`<img src="${esc(SITE.logo)}" alt="">`:`<div class="mark">${IC.logo}</div>`;
+
+/* =====================================================================
+   PLAYER
+   ===================================================================== */
+let ytPromise=null;
+function loadYT(){
+  if(window.YT&&YT.Player)return Promise.resolve();
+  if(!ytPromise)ytPromise=new Promise((res,rej)=>{
+    const prev=window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady=()=>{prev&&prev();res()};
+    const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=()=>{ytPromise=null;rej(new Error('โหลด YouTube ไม่ได้'))};document.head.appendChild(s);
+  });
+  return ytPromise;
+}
+
+function mountPlayer(root,P,opts){
+  opts=opts||{};
+  const preview=!!opts.preview, vid=ytId(P.videoId||P.videoUrl);
+  const S={done:{},ans:{},tries:{},cur:null,max:0,dur:0,ready:false,ended:false,finished:false,saved:false,start:Date.now(),seeking:false,queue:[]};
+  const uidp='yt'+Math.random().toString(36).slice(2,8);
+  const port=P.orientation==='portrait';
+  const items=()=>sortItems(P.items=P.items||[]);
+  let yt=null,poll=null,idleT=null,dead=false;
+
+  root.classList.add('pl');
+  root.innerHTML=`<div class="stage ${port?'portrait':'landscape'} paused" style="${themeVars(P)}">
+    <div class="yt"><div id="${uidp}"></div></div>
+    <div class="shield"></div>
+    <button class="bigplay" aria-label="เล่น">${IC.big}</button>
+    <div class="ctrl">
+      <div class="seekw"><div class="track"><div class="prog"></div><div class="marks"></div></div><input class="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="ตำแหน่งวิดีโอ"></div>
+      <div class="crow"><button class="cb play" aria-label="เล่น/หยุด">${IC.play}</button><span><b class="t1">0:00</b> / <span class="t2">0:00</span></span><span class="sp"></span>
+        <button class="cb txt speed">1×</button><button class="cb mute" aria-label="เสียง">${IC.vol}</button><button class="cb fs" aria-label="เต็มจอ">${IC.fs}</button></div>
+    </div>
+    <div class="ov"></div>
+  </div>`;
+  const stage=$('.stage',root), ov=$('.ov',root), q=s=>$(s,root);
+  if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled))q('.fs').style.display='none';
+  if(!vid){stage.insertAdjacentHTML('beforeend','<div class="err"><div><div style="font-size:34px">🎬</div>ยังไม่ได้ใส่ลิงก์วิดีโอ YouTube</div></div>');}
+
+  /* ----- UI sync ----- */
+  function renderMarks(){const d=S.dur;q('.marks').innerHTML=d?items().map(it=>`<i class="mk ${isQ(it)?'q':'i'}" style="left:${Math.min(100,it.t/d*100)}%" title="${esc(it.title||'')}"></i>`).join(''):''}
+  function ui(cur){const d=S.dur;q('.t1').textContent=fmt(cur);q('.t2').textContent=fmt(d);q('.prog').style.width=(d?cur/d*100:0)+'%';if(!S.seeking)q('.seek').value=d?cur/d*1000:0}
+  function setState(st){const playing=st===1||st===3;stage.classList.toggle('paused',!playing);q('.play').innerHTML=playing?IC.pause:IC.play;if(playing)wake();else stage.classList.remove('idle')}
+  function wake(){stage.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>stage.classList.add('idle'),2600)}
+  stage.addEventListener('pointermove',wake);
+  function toggle(){if(!yt||!S.ready||S.cur)return;const st=yt.getPlayerState();if(st===1||st===3)yt.pauseVideo();else{if(S.ended){S.ended=false}yt.playVideo()}}
+  q('.shield').onclick=()=>{toggle();wake()};
+  q('.bigplay').onclick=toggle;
+  q('.play').onclick=toggle;
+  q('.speed').onclick=e=>{if(!yt)return;const r=[1,1.25,1.5,2,.75];const i=r.indexOf(S.rate||1);S.rate=r[(i+1)%r.length];yt.setPlaybackRate(S.rate);e.currentTarget.textContent=S.rate+'×'};
+  q('.mute').onclick=e=>{if(!yt)return;if(yt.isMuted()){yt.unMute();e.currentTarget.innerHTML=IC.vol}else{yt.mute();e.currentTarget.innerHTML=IC.mute}};
+  q('.fs').onclick=()=>{const d=document;if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d)}else{(root.requestFullscreen||root.webkitRequestFullscreen).call(root)}};
+  const sk=q('.seek');
+  sk.addEventListener('input',()=>{S.seeking=true;q('.t1').textContent=fmt(sk.value/1000*S.dur)});
+  sk.addEventListener('change',()=>{S.seeking=false;if(!yt||!S.dur)return;let t=sk.value/1000*S.dur;
+    if(!preview&&P.lockForward!==false&&t>S.max+1.5){t=S.max;toast('ยังไม่สามารถข้ามไปข้างหน้าได้ — ดูคลิปให้จบก่อนนะ')}
+    yt.seekTo(t,true)});
+  const onKey=e=>{if(S.cur||dead||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!root.isConnected)return;
+    if(e.code==='Space'||e.key==='k'){e.preventDefault();toggle()}
+    else if(e.key==='ArrowLeft'&&yt&&S.ready){yt.seekTo(Math.max(0,yt.getCurrentTime()-5),true)}
+    else if(e.key==='ArrowRight'&&yt&&S.ready){let t=yt.getCurrentTime()+5;if(!preview&&P.lockForward!==false)t=Math.min(t,S.max);yt.seekTo(t,true)}};
+  document.addEventListener('keydown',onKey);
+
+  /* ----- item overlay ----- */
+  const check=(it,v)=>{
+    if(it.type==='mcq')return +v===+it.answer;
+    if(it.type==='tf')return (+v===0)===!!it.answer;
+    if(it.type==='multi'){const a=(it.answer||[]).map(Number).sort().join(),b=(v||[]).map(Number).sort().join();return a===b&&b!==''}
+    if(it.type==='fill')return (it.answer||[]).some(a=>norm(a)===norm(v));
+    return true};
+  function showOv(html){ov.innerHTML=html;ov.classList.remove('out');ov.scrollTop=0;ov.classList.add('show');stage.classList.add('busy');const c=$('.ocard',ov);if(c){c.style.animation='none';void c.offsetWidth;c.style.animation=''}}
+  function hideOv(cb){ov.classList.add('out');setTimeout(()=>{ov.classList.remove('show','out');ov.innerHTML='';stage.classList.remove('busy');cb&&cb()},220)}
+  function itemHead(it){const qs=items().filter(isQ),n=qs.indexOf(it)+1;
+    return `<div class="ch"><span class="chip">${isQ(it)?`คำถามข้อ ${n}/${qs.length}`:'💡 ข้อมูลน่ารู้'}</span><span class="chip ghost">⏱ ${fmt(it.t)}</span>${isQ(it)&&pts(it)?`<span class="chip pts">${pts(it)} คะแนน</span>`:''}</div>`}
+  function showItem(it){
+    S.cur=it;try{yt&&yt.pauseVideo()}catch(e){}
+    let h=`<div class="ocard">${itemHead(it)}${it.title?`<h3>${rich(it.title)}</h3>`:''}${it.image?`<img class="im" src="${esc(it.image)}" alt="">`:''}${it.body?`<p class="bd">${rich(it.body)}</p>`:''}`;
+    if(it.type==='info'){h+=`<div class="oact"><button class="btn pri" data-pa="next">${esc(it.btn||'ไปต่อ')} ▶</button></div>`}
+    else if(it.type==='fill'){h+=`<div class="fillw"><input class="inp" id="fillv" placeholder="พิมพ์คำตอบ…" autocomplete="off"><button class="btn pri" data-pa="fill">ตรวจ</button></div><div class="fbw"></div><div class="oact"></div>`}
+    else{
+      const opts=it.type==='tf'?['ถูก','ผิด']:(it.options||[]);
+      h+=`<div class="opts">${opts.map((o,i)=>`<button class="opt" style="--n:${i}" data-i="${i}"><span class="k">${it.type==='tf'?(i?'✗':'✓'):LETTERS[i]||i+1}</span><span>${esc(o)}</span></button>`).join('')}</div>`;
+      if(it.type==='multi')h+=`<div class="hint" style="margin:-4px 0 8px">เลือกได้หลายข้อ แล้วกด “ตรวจคำตอบ”</div><div class="oact"><button class="btn pri" data-pa="multi">ตรวจคำตอบ</button></div>`;
+      h+=`<div class="fbw"></div><div class="oact acts"></div>`;
+    }
+    h+=`</div>`;showOv(h);
+    const f=$('#fillv',ov);if(f){setTimeout(()=>f.focus(),500);f.onkeydown=e=>{if(e.key==='Enter')submit(it,f.value)}}
+  }
+  function confetti(){const c=document.createElement('div');c.className='confetti';const cols=['#ff8fb8','#e0408a','#ffd166','#7dd3fc','#a78bfa','#86efac'];
+    for(let i=0;i<22;i++){const e=document.createElement('i');e.style.cssText=`background:${cols[i%6]};--x:${(Math.random()-.5)*340}px;--y:${-60+Math.random()*260}px;--r:${Math.random()*720-360}deg;animation-delay:${Math.random()*.1}s`;c.appendChild(e)}
+    $('.ocard',ov).appendChild(c);setTimeout(()=>c.remove(),1400)}
+  function submit(it,v){
+    if(it.type==='fill'&&!String(v).trim()){toast('พิมพ์คำตอบก่อนนะ');return}
+    if(it.type==='multi'&&!(v&&v.length)){toast('เลือกอย่างน้อย 1 ข้อ');return}
+    const ok=check(it,v);
+    S.tries[it.id]=(S.tries[it.id]||0)+1;
+    if(!S.ans[it.id])S.ans[it.id]={v,ok};
+    const mode=it.onWrong||'continue', reveal=ok||mode!=='retry';
+    // mark options
+    if(it.type!=='fill'){
+      const corr=it.type==='tf'?[it.answer?0:1]:(it.type==='mcq'?[+it.answer]:(it.answer||[]).map(Number));
+      const chosen=Array.isArray(v)?v.map(Number):[+v];
+      $$('.opt',ov).forEach((b,i)=>{b.disabled=true;b.classList.remove('sel');
+        if(chosen.includes(i))b.classList.add(corr.includes(i)?'right':'wrong');
+        else if(reveal&&corr.includes(i)&&!ok)b.classList.add('right')});
+    }else{$('#fillv',ov).disabled=true;$('[data-pa=fill]',ov).style.display='none'}
+    $$('[data-pa=multi]',ov).forEach(b=>b.parentElement.style.display='none');
+    let fb=`<div class="fb ${ok?'ok':'no'}"><b>${ok?'🎉 ถูกต้อง!':'ยังไม่ถูกต้อง'}</b>`;
+    if(!ok&&it.type==='fill'&&reveal)fb+=`เฉลย: ${esc((it.answer||[])[0]||'')}<br>`;
+    if(it.explain&&reveal)fb+=rich(it.explain);else if(it.explain&&ok)fb+=rich(it.explain);
+    fb+='</div>';$('.fbw',ov).innerHTML=fb;
+    let a='';
+    if(ok||mode==='continue')a=`<button class="btn pri" data-pa="next">ไปต่อ ▶</button>`;
+    else if(mode==='retry')a=`<button class="btn" data-pa="skip">ข้ามไปต่อ</button><button class="btn pri" data-pa="retry">ลองอีกครั้ง ↻</button>`;
+    else a=`<button class="btn" data-pa="skip">ไปต่อ</button><button class="btn pri" data-pa="rewind">⏪ ย้อนกลับไปดูอีกครั้ง</button>`;
+    $('.oact:last-child',ov).innerHTML=a;
+    if(ok)confetti();
+    const nb=$('[data-pa=next],[data-pa=retry],[data-pa=rewind]',ov);if(nb)nb.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  ov.addEventListener('click',e=>{
+    const o=e.target.closest('.opt');const it=S.cur;
+    if(o&&it&&!o.disabled){
+      if(it.type==='multi'){o.classList.toggle('sel');return}
+      $$('.opt',ov).forEach(x=>x.classList.remove('sel'));o.classList.add('sel');submit(it,+o.dataset.i);return}
+    const b=e.target.closest('[data-pa]');if(!b)return;const pa=b.dataset.pa;
+    if(pa==='multi'){submit(it,$$('.opt.sel',ov).map(x=>+x.dataset.i))}
+    else if(pa==='fill'){submit(it,$('#fillv',ov).value)}
+    else if(pa==='retry'){showItem(it)}
+    else if(pa==='rewind'){S.done[it.id]=false;const to=it.rewindTo!=null?it.rewindTo:Math.max(0,it.t-20);S.hold=Date.now()+900;yt.seekTo(Math.max(0,to),true);S.max=Math.max(S.max,it.t);closeItem(false)}
+    else if(pa==='next'||pa==='skip'){closeItem(true)}
+    else if(pa==='again'){restart()}
+    else if(pa==='save'){doSave()}
+  });
+  function closeItem(markDone){const it=S.cur;if(markDone&&it)S.done[it.id]=true;S.cur=null;hideOv(()=>{
+    if(S.queue.length){showItem(S.queue.shift());return}
+    if(S.ended){finish();return}
+    try{if(!preview&&yt&&yt.getPlayerState()===0){S.ended=true;finish();return}}catch(e){}
+    if(yt&&markDone!==undefined&&it)try{yt.playVideo()}catch(e){}})}
+
+  /* ----- finish / summary ----- */
+  function result(){const qs=items().filter(isQ);const max=qs.reduce((a,i)=>a+pts(i),0);const score=qs.reduce((a,i)=>a+(S.ans[i.id]&&S.ans[i.id].ok?pts(i):0),0);
+    const answers={};qs.forEach(i=>{if(S.ans[i.id])answers[i.id]={a:S.ans[i.id].v,ok:S.ans[i.id].ok}});
+    return {score,max,answers,duration:Math.round((Date.now()-S.start)/1000)}}
+  function finish(){
+    S.finished=true;const r=result(),qs=items().filter(isQ),show=P.showScore!==false&&r.max>0,pc=r.max?Math.round(r.score/r.max*100):100;
+    const msg=pc>=80?'ยอดเยี่ยมมาก! 🌟':pc>=50?'ทำได้ดีเลย 👍':'ไม่เป็นไร ลองทบทวนอีกครั้งนะ 💪';
+    let h=`<div class="ocard sum"><div class="ch" style="justify-content:center"><span class="chip">🎓 เรียนจบแล้ว</span></div>`;
+    if(show){h+=`<div class="ring" id="ring"><div><b id="scn">0</b><small>/ ${r.max} คะแนน</small></div></div><h3>${msg}</h3>`;
+      h+=`<div class="rv">${qs.map((i,n)=>`<div><span>${S.ans[i.id]?(S.ans[i.id].ok?'✅':'❌'):'⬜'}</span><span>ข้อ ${n+1}. ${esc((i.title||'').slice(0,70))}</span></div>`).join('')}</div>`}
+    else h+=`<h3>ขอบคุณที่ตั้งใจเรียนนะ 🎉</h3>`;
+    if(!preview)h+=`<div class="st" id="svst"></div>`;
+    h+=`<div class="oact" style="justify-content:center"><button class="btn" data-pa="again">↻ เรียนอีกครั้ง</button></div></div>`;
+    showOv(h);
+    if(show)requestAnimationFrame(()=>setTimeout(()=>{const ring=$('#ring',ov);if(!ring)return;ring.style.setProperty('--p',pc);let n=0;const tg=r.score,step=()=>{n+=Math.max(.1,tg/40);const el=$('#scn',ov);if(!el)return;if(n>=tg){el.textContent=tg;return}el.textContent=Math.floor(n);requestAnimationFrame(step)};step();if(pc>=50)confetti()},350));
+    if(!preview&&opts.onFinish&&!S.saved){S.saved=true;doSave(r)}
+  }
+  function doSave(r){
+    r=r||result();const el=$('#svst',ov);if(el)el.textContent='⏳ กำลังบันทึกผล…';
+    Promise.resolve(opts.onFinish(r)).then(()=>{const e=$('#svst',ov);if(e)e.innerHTML='✅ บันทึกผลเรียบร้อยแล้ว'})
+      .catch(err=>{console.error(err);const e=$('#svst',ov);if(e)e.innerHTML='⚠️ บันทึกผลไม่สำเร็จ <button class="btn sm" data-pa="save">ลองอีกครั้ง</button>'})}
+  function restart(){S.done={};S.tries={};S.ans={};S.max=0;S.ended=false;S.finished=false;S.cur=null;S.queue=[];S.start=Date.now();hideOv(()=>{yt.seekTo(0,true);yt.playVideo()})}
+
+  /* ----- main loop ----- */
+  function tick(){
+    if(!S.ready||dead||(S.hold&&Date.now()<S.hold))return;
+    let cur=0;try{cur=yt.getCurrentTime()||0;const d=yt.getDuration();if(d&&d!==S.dur){S.dur=d;renderMarks()}}catch(e){return}
+    if(S.cur||S.finished){ui(cur);return}
+    if(!preview&&P.lockForward!==false&&cur>S.max+2.2&&yt.getPlayerState()!==3){yt.seekTo(S.max,true);toast('ยังไม่สามารถข้ามไปข้างหน้าได้');return}
+    if(cur>S.max)S.max=cur;
+    ui(cur);
+    const list=items();
+    if(preview)list.forEach(it=>{if(S.done[it.id]&&cur<it.t-.8)S.done[it.id]=false});
+    for(const it of list){
+      if(it.t>cur+.15)break;
+      if(S.done[it.id])continue;
+      const gap=cur-it.t;
+      if(gap>1.6&&it.required===false){S.done[it.id]='skip';continue}
+      if(gap>1.6&&!preview)yt.seekTo(it.t,true);
+      showItem(it);return;
+    }
+  }
+  S.api={
+    getTime:()=>{try{return yt?yt.getCurrentTime():0}catch(e){return 0}},
+    seek:t=>{if(yt&&S.ready)yt.seekTo(Math.max(0,t),true)},
+    play:()=>yt&&S.ready&&yt.playVideo(),pause:()=>yt&&S.ready&&yt.pauseVideo(),
+    showItem:it=>{if(S.cur)return;showItem(it)},
+    refresh:()=>{renderMarks()},
+    reset:()=>{S.done={};renderMarks()},
+    destroy:()=>{dead=true;clearInterval(poll);clearTimeout(idleT);document.removeEventListener('keydown',onKey);try{yt&&yt.destroy()}catch(e){}root.innerHTML='';root.classList.remove('pl')}
+  };
+
+  if(vid)loadYT().then(()=>{
+    if(dead)return;
+    const vars={controls:0,rel:0,modestbranding:1,playsinline:1,fs:0,disablekb:1,iv_load_policy:3,cc_load_policy:0};
+    if(/^https?:/.test(location.protocol))vars.origin=location.origin;
+    yt=new YT.Player(uidp,{videoId:vid,playerVars:vars,events:{
+      onReady:()=>{S.ready=true;S.dur=yt.getDuration()||0;renderMarks();ui(0);poll=setInterval(tick,140);opts.onReady&&opts.onReady(S.api)},
+      onStateChange:e=>{setState(e.data);
+        if(e.data===0&&!S.finished&&!S.cur){S.ended=true;
+          const d=S.dur||yt.getDuration();const rest=items().filter(it=>!S.done[it.id]&&it.t>=d-2.5);
+          if(preview){return}
+          S.queue=rest;if(S.queue.length)showItem(S.queue.shift());else finish()}},
+      onError:e=>{stage.insertAdjacentHTML('beforeend',`<div class="err"><div><div style="font-size:34px">⚠️</div>เล่นวิดีโอนี้ไม่ได้ (รหัส ${e.data})<br><small>ตรวจว่าวิดีโอเป็น “ไม่เป็นสาธารณะ/สาธารณะ” และอนุญาตให้ฝัง</small></div></div>`)}
+    }});
+  }).catch(err=>{stage.insertAdjacentHTML('beforeend',`<div class="err"><div>⚠️ ${esc(err.message)}<br><small>ตรวจการเชื่อมต่ออินเทอร์เน็ต</small></div></div>`)});
+  return S.api;
+}
+
+/* =====================================================================
+   VIEWS
+   ===================================================================== */
+const app=$('#app');
+let ACT={},USER=null,authReady=false,CUR=null;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b,e)});
+function cleanup(){if(CUR&&CUR.destroy)CUR.destroy();CUR=null;ACT={};$$('.modal-bg').forEach(m=>m.remove());document.title=siteName();applySite.keepTitle=false}
+const go=h=>{location.hash=h};
+const playLink=id=>location.origin+location.pathname+'#/play/'+id;
+const credit=()=>`<div class="credit">${CREDIT}</div>`;
+
+function topbar(extra){
+  return `<header class="topbar"><a class="brand" href="#/" style="text-decoration:none;color:inherit">${markHtml()}<span>${esc(siteName())}</span></a><div class="sp"></div>${extra||''}
+  ${USER?`<button class="btn sm" data-act="settings">⚙️ ตั้งค่าระบบ</button>${Data.mode==='firebase'?`<button class="btn sm" data-act="logout">ออกจากระบบ</button>`:''}${USER.photo?`<img class="avatar" src="${esc(USER.photo)}" referrerpolicy="no-referrer" alt="">`:''}`:''}</header>`;
+}
+function baseAct(){ACT.settings=()=>go('#/settings');ACT.logout=async()=>{await Data.signOut();go('#/')}}
+
+/* ----- login ----- */
+function loginView(){
+  applyTheme(null);
+  app.innerHTML=`<div class="login"><div class="card">${SITE.logo?`<img class="lg" src="${esc(SITE.logo)}" alt="">`:`<div class="mark">${IC.logo}</div>`}
+    <h1 class="page" style="font-size:22px">${esc(siteName())}</h1><p class="sub">เข้าสู่ระบบสำหรับครูผู้สร้างบทเรียน</p>
+    <button class="btn pri" data-act="login" style="width:100%;justify-content:center;padding:13px">เข้าสู่ระบบด้วย Google</button>
+    <p class="hint" style="margin-top:18px">นักเรียนไม่ต้องเข้าสู่ระบบ เพียงเปิดลิงก์ที่ครูส่งให้</p></div></div>${credit()}`;
+  ACT.login=async()=>{try{await Data.signIn()}catch(e){toast('เข้าสู่ระบบไม่สำเร็จ: '+(e.code||e.message),4000)}};
+}
+
+/* ----- studio list ----- */
+async function listView(){
+  applyTheme(null);baseAct();
+  app.innerHTML=topbar()+`<div class="wrap"><h1 class="page">Project ของฉัน</h1><p class="sub">สร้างบทเรียนวิดีโอแบบโต้ตอบ แทรกคำถามตามเวลาในคลิป และส่งลิงก์ให้นักเรียนได้ทันที</p>${Data.mode==='demo'?`<div class="card" style="padding:12px 16px;margin-bottom:18px;background:#fff7e0;border-color:#fde7a3">🧪 <b>โหมดทดลอง</b> — ยังไม่ได้ตั้งค่า Firebase ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น</div>`:''}<div id="gl"><div class="spin"></div></div></div>${credit()}`;
+  let list=[];try{list=await Data.listProjects(USER.uid)}catch(e){console.error(e);$('#gl').innerHTML=`<div class="empty">โหลดรายการไม่สำเร็จ: ${esc(e.code||e.message)}<br><small>ตรวจ Security Rules และอีเมลครูที่อนุญาต</small></div>`;return}
+  $('#gl').innerHTML=`<div class="grid">${list.map((p,i)=>{const v=ytId(p.videoId||p.videoUrl),q=(p.items||[]).filter(isQ).length;
+    return `<div class="card pcard" style="animation-delay:${i*50}ms"><div class="pthumb">${v?`<img src="https://i.ytimg.com/vi/${v}/hqdefault.jpg" alt="" loading="lazy">`:''}${p.logo?`<img class="lg" src="${esc(p.logo)}" alt="">`:''}</div>
+    <div class="pbody"><div class="cl">${esc(p.classroom||'')}</div><h3>${esc(p.title||'ไม่มีชื่อ')}</h3><div class="row"><span class="chip ghost">${p.orientation==='portrait'?'📱 แนวตั้ง':'🖥️ แนวนอน'}</span><span class="chip">❓ ${q} คำถาม</span><span class="chip ghost">📌 ${(p.items||[]).length} จุด</span></div>
+    <div class="pact"><button class="btn sm pri" data-act="edit" data-id="${p.id}">✏️ แก้ไข</button><button class="btn sm" data-act="open" data-id="${p.id}">▶ เปิดดู</button><button class="btn sm" data-act="copy" data-id="${p.id}">🔗 คัดลอกลิงก์</button><button class="btn sm" data-act="results" data-id="${p.id}">📊 ผลลัพธ์</button><button class="btn sm danger icon" data-act="del" data-id="${p.id}" title="ลบ">🗑</button></div></div></div>`}).join('')}
+    <div class="card pcard newcard" data-act="new"><div><b>+</b>สร้าง Project ใหม่</div></div></div>`;
+  ACT.new=async()=>{const id=uid8();const P=newProject(USER);try{await Data.createProject(id,P);go('#/edit/'+id)}catch(e){toast('สร้างไม่สำเร็จ: '+(e.code||e.message),4000)}};
+  ACT.edit=b=>go('#/edit/'+b.dataset.id);
+  ACT.open=b=>window.open(playLink(b.dataset.id),'_blank');
+  ACT.results=b=>go('#/results/'+b.dataset.id);
+  ACT.copy=b=>copyText(playLink(b.dataset.id));
+  ACT.del=async b=>{const p=list.find(x=>x.id===b.dataset.id);if(!confirm(`ลบ “${p.title}” และผลการเรียนทั้งหมด?\nลบแล้วกู้คืนไม่ได้`))return;try{await Data.deleteProject(p.id);toast('ลบแล้ว');listView()}catch(e){toast('ลบไม่สำเร็จ: '+(e.code||e.message),4000)}};
+}
+const newProject=u=>({owner:u.uid,classroom:'ห้องเรียนของครู',title:'บทเรียนวิดีโอใหม่',description:'',videoId:'',orientation:'landscape',logo:'',accent:'pink',bg:'soft',lockForward:true,askName:true,idLabel:'ชั้น/เลขที่',showScore:true,items:[]});
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast('คัดลอกแล้ว ✓')}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('คัดลอกแล้ว ✓')}}
+
+/* ----- settings ----- */
+async function settingsView(){
+  applyTheme(null);baseAct();
+  await loadSite();
+  let S2=Object.assign({},SITE);
+  const draw=()=>{app.innerHTML=topbar(`<a class="btn sm" href="#/">← กลับ</a>`)+`<div class="wrap" style="max-width:720px"><h1 class="page">ตั้งค่าระบบ</h1><p class="sub">โลโก้และ favicon ของทั้งระบบ (แสดงบนหน้าเข้าสู่ระบบ แท็บเบราว์เซอร์ และ Project ที่ไม่ได้ตั้งโลโก้เอง)</p>
+  <div class="card pane"><label class="f" style="margin-top:0">ชื่อระบบ</label><input class="inp" id="sn" value="${esc(S2.name||'')}" placeholder="${esc(DEFAULT_SITE_NAME)}">
+  <label class="f">โลโก้ระบบ</label><div class="logoup"><div class="box">${S2.logo?`<img src="${esc(S2.logo)}">`:'ยังไม่มี'}</div><div class="row"><button class="btn" data-act="upl">อัปโหลดโลโก้</button>${S2.logo?`<button class="btn danger" data-act="rml">ลบ</button>`:''}</div></div>
+  <div class="hint">ไฟล์ภาพ PNG/JPG/SVG — ระบบย่อให้อัตโนมัติ (สูงสุด 256px)</div>
+  <label class="f">Favicon (ไอคอนบนแท็บเบราว์เซอร์)</label><div class="logoup"><div class="box" style="width:56px;height:56px;border-radius:12px">${S2.favicon?`<img src="${esc(S2.favicon)}">`:'ยังไม่มี'}</div><div class="row"><button class="btn" data-act="upf">อัปโหลด favicon</button>${S2.favicon?`<button class="btn danger" data-act="rmf">ลบ</button>`:''}<button class="btn soft" data-act="samef">ใช้รูปเดียวกับโลโก้</button></div></div>
+  <div class="row" style="margin-top:22px"><button class="btn pri" data-act="savesite">💾 บันทึกการตั้งค่า</button></div></div></div>${credit()}`};
+  draw();
+  const sync=()=>{const e=$('#sn');if(e)S2.name=e.value.trim()};
+  ACT.upl=async()=>{sync();const d=await pickImage(256,false);if(d){S2.logo=d;draw()}};
+  ACT.upf=async()=>{sync();const d=await pickImage(64,true);if(d){S2.favicon=d;draw()}};
+  ACT.rml=()=>{sync();S2.logo='';draw()};ACT.rmf=()=>{sync();S2.favicon='';draw()};
+  ACT.samef=async()=>{sync();if(!S2.logo)return toast('อัปโหลดโลโก้ก่อน');const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=64;const s=Math.min(64/im.width,64/im.height);c.getContext('2d').drawImage(im,(64-im.width*s)/2,(64-im.height*s)/2,im.width*s,im.height*s);S2.favicon=c.toDataURL('image/png');draw()};im.src=S2.logo};
+  ACT.savesite=async()=>{sync();try{await Data.setSite({name:S2.name||'',logo:S2.logo||'',favicon:S2.favicon||''});SITE=Object.assign({},S2);localStorage.setItem('vq_site',JSON.stringify(SITE));applySite();toast('บันทึกแล้ว ✓');draw()}catch(e){toast('บันทึกไม่สำเร็จ: '+(e.code||e.message),4000)}};
+}
+
+/* ----- editor ----- */
+async function editView(id){
+  baseAct();
+  app.innerHTML=`<div class="spin"></div>`;
+  let P;try{P=await Data.getProject(id)}catch(e){app.innerHTML=`<div class="empty">เปิดไม่ได้: ${esc(e.code||e.message)}</div>`;return}
+  if(!P){app.innerHTML=`<div class="empty">ไม่พบ Project นี้ <a href="#/">กลับ</a></div>`;return}
+  P.items=sortItems((P.items||[]).map(normItem));
+  let tab='set',dirty=false,api=null,pt=null;
+  applyTheme(P);
+  const mark=()=>{dirty=true;const d=$('.dirty');d&&d.classList.add('on')};
+  const rebuild=()=>{clearTimeout(pt);pt=setTimeout(()=>{if(api){api.destroy();api=null}applyTheme(P);api=mountPlayer($('#prev'),P,{preview:true,onReady:a=>{api=a}});CUR.api=api},350)};
+  const addExtra=`<a class="btn sm" href="#/" data-act="back">← กลับ</a><span class="dirty" title="ยังไม่ได้บันทึก"></span><button class="btn sm pri" data-act="save">💾 บันทึก</button><button class="btn sm" data-act="copylink">🔗 ลิงก์ให้นักเรียน</button><button class="btn sm" data-act="openp">▶ เปิดดู</button>`;
+  app.innerHTML=topbar(addExtra)+`<div class="wrap"><div class="ed"><section class="ed-left"><div id="prev"></div>
+    <div class="card prev-bar"><span>⏱ เวลาปัจจุบัน <b id="curT">0:00</b></span><span class="sp"></span><button class="btn sm soft" data-act="addhere">＋ ปักคำถาม/คำอธิบาย ที่เวลานี้</button></div>
+    <p class="hint" style="margin:8px 4px">เลื่อนคลิปไปยังเวลาที่ต้องการ แล้วกดปุ่มด้านบนเพื่อปักจุดแทรก • จุดสีชมพูบนแถบเวลาคือคำถาม</p></section>
+    <section class="ed-right"><div class="tabs"><button data-act="tab" data-t="set">⚙️ ตั้งค่า</button><button data-act="tab" data-t="items">📌 จุดแทรกในคลิป</button><button data-act="tab" data-t="ai">🤖 นำเข้า / AI</button></div><div class="card pane" id="pane"></div></section></div></div>${credit()}`;
+  CUR={destroy(){clearInterval(timer);clearTimeout(pt);api&&api.destroy();window.onbeforeunload=null},api:null};
+  window.onbeforeunload=()=>dirty?'ยังไม่ได้บันทึก':null;
+  const timer=setInterval(()=>{const e=$('#curT');if(e&&api)e.textContent=fmt(api.getTime())},300);
+  api=mountPlayer($('#prev'),P,{preview:true,onReady:a=>{api=a;CUR.api=a}});
+
+  const bind=(sel,key,after)=>{const e=$(sel);if(!e)return;const ev=e.type==='checkbox'?'change':'input';e.addEventListener(ev,()=>{P[key]=e.type==='checkbox'?e.checked:e.value;mark();after&&after()})};
+  function pane(){
+    $$('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+    const pn=$('#pane');
+    if(tab==='set'){
+      pn.innerHTML=`<label class="f" style="margin-top:0">ชื่อห้องเรียน / รายวิชา</label><input class="inp" id="f_cls" value="${esc(P.classroom)}" placeholder="เช่น ภาษาไทย ม.3/1">
+      <label class="f">ชื่อบทเรียน</label><input class="inp" id="f_title" value="${esc(P.title)}">
+      <label class="f">คำอธิบายสั้น ๆ (แสดงในหน้าเริ่มเรียน)</label><textarea class="inp" id="f_desc" style="min-height:70px">${esc(P.description)}</textarea>
+      <label class="f">ลิงก์วิดีโอ YouTube</label><input class="inp" id="f_vid" value="${esc(P.videoUrl||P.videoId)}" placeholder="https://youtu.be/xxxxxxxxxxx หรือ youtube.com/shorts/…"><div class="hint" id="vh">${ytId(P.videoUrl||P.videoId)?'✓ รหัสวิดีโอ: '+ytId(P.videoUrl||P.videoId):'ตั้งค่าวิดีโอเป็น “ไม่เป็นสาธารณะ (Unlisted)” และเปิดให้ฝังได้'}</div>
+      <label class="f">รูปแบบวิดีโอ</label><div class="seg" id="s_or"><button data-v="landscape" class="${P.orientation!=='portrait'?'on':''}">🖥️ แนวนอน 16:9</button><button data-v="portrait" class="${P.orientation==='portrait'?'on':''}">📱 แนวตั้ง 9:16</button></div>
+      <label class="f">โลโก้ของ Project นี้</label><div class="logoup"><div class="box">${P.logo?`<img src="${esc(P.logo)}">`:'ใช้โลโก้ระบบ'}</div><div class="row"><button class="btn" data-act="plogo">อัปโหลดโลโก้</button>${P.logo?`<button class="btn danger" data-act="rmlogo">ลบ</button>`:''}</div></div>
+      <label class="f">สีธีม</label><div class="swatches" id="sw">${Object.entries(ACCENTS).map(([k,a])=>`<button class="swatch ${P.accent===k?'on':''}" data-k="${k}" title="${a.n}" style="background:linear-gradient(135deg,${a.a1},${a.a2})"></button>`).join('')}</div>
+      <label class="f">พื้นหลังหน้านักเรียน</label><div class="seg" id="s_bg"><button data-v="soft" class="${P.bg!=='white'?'on':''}">ไล่เฉดนุ่ม ๆ</button><button data-v="white" class="${P.bg==='white'?'on':''}">ขาวเรียบ</button></div>
+      <label class="f">การเรียน</label>
+      <label class="sw"><input type="checkbox" id="c_lock" ${P.lockForward!==false?'checked':''}><i></i>ห้ามกรอวิดีโอข้ามไปข้างหน้า (ต้องดูตามลำดับ)</label>
+      <label class="sw"><input type="checkbox" id="c_name" ${P.askName!==false?'checked':''}><i></i>ให้นักเรียนกรอกชื่อก่อนเริ่มเรียน</label>
+      <label class="sw"><input type="checkbox" id="c_score" ${P.showScore!==false?'checked':''}><i></i>แสดงคะแนนและสรุปผลเมื่อเรียนจบ</label>
+      <label class="f">ป้ายช่องข้อมูลที่ 2 (เช่น ชั้น/เลขที่)</label><input class="inp" id="f_idl" value="${esc(P.idLabel||'')}">`;
+      bind('#f_cls','classroom');bind('#f_title','title');bind('#f_desc','description');bind('#f_idl','idLabel');
+      bind('#c_lock','lockForward');bind('#c_name','askName');bind('#c_score','showScore');
+      $('#f_vid').addEventListener('input',e=>{const v=e.target.value.trim();P.videoUrl=v;P.videoId=ytId(v);if(/\/shorts\//.test(v)&&P.orientation!=='portrait'){P.orientation='portrait';$$('#s_or button').forEach(b=>b.classList.toggle('on',b.dataset.v==='portrait'));toast('ตรวจพบ YouTube Shorts — ตั้งเป็นแนวตั้งให้แล้ว')}
+        $('#vh').textContent=P.videoId?'✓ รหัสวิดีโอ: '+P.videoId:'ยังไม่พบรหัสวิดีโอในลิงก์นี้';mark();if(P.videoId)rebuild()});
+      $$('#s_or button').forEach(b=>b.onclick=()=>{P.orientation=b.dataset.v;$$('#s_or button').forEach(x=>x.classList.toggle('on',x===b));mark();rebuild()});
+      $$('#s_bg button').forEach(b=>b.onclick=()=>{P.bg=b.dataset.v;$$('#s_bg button').forEach(x=>x.classList.toggle('on',x===b));mark();applyTheme(P)});
+      $$('#sw button').forEach(b=>b.onclick=()=>{P.accent=b.dataset.k;$$('#sw button').forEach(x=>x.classList.toggle('on',x===b));mark();applyTheme(P);rebuild()});
+    }else if(tab==='items'){itemsPane()}
+    else{aiPane()}
+  }
+  function itemsPane(){
+    const pn=$('#pane');
+    pn.innerHTML=`<div class="row"><b>${P.items.length} จุดแทรก</b> <span class="chip">❓ ${P.items.filter(isQ).length} คำถาม</span><span class="sp"></span><button class="btn sm pri" data-act="newitem" data-ty="mcq">＋ คำถาม</button><button class="btn sm" data-act="newitem" data-ty="info">＋ คำอธิบาย</button></div>
+    <div class="items">${P.items.length?P.items.map(it=>`<div class="irow"><span class="tm">${fmt(it.t)}</span><div class="tt"><b>${esc((it.title||it.body||'(ไม่มีหัวข้อ)').replace(/\*\*/g,''))}</b><small>${TYPES[it.type]}${isQ(it)?` • ${pts(it)} คะแนน`:''}</small></div>
+      <button class="btn sm icon" data-act="seekit" data-id="${it.id}" title="ไปที่จุดนี้">⏱</button><button class="btn sm icon" data-act="showit" data-id="${it.id}" title="ดูตัวอย่างที่นักเรียนเห็น">👁</button><button class="btn sm icon" data-act="editit" data-id="${it.id}" title="แก้ไข">✏️</button><button class="btn sm icon" data-act="dupit" data-id="${it.id}" title="ทำซ้ำ">⧉</button><button class="btn sm icon danger" data-act="delit" data-id="${it.id}" title="ลบ">🗑</button></div>`).join(''):`<div class="empty">ยังไม่มีจุดแทรก<br>กด “＋ คำถาม” หรือใช้แท็บ “นำเข้า / AI” ให้ AI ออกแบบให้ทั้งชุด</div>`}</div>`;
+  }
+  function aiPane(){
+    const pn=$('#pane');
+    pn.innerHTML=`<b>ให้ AI ออกแบบคำถามให้ทั้งคลิป</b><p class="hint" style="margin:4px 0 10px">1) กดคัดลอกพรอมต์ 2) วางใน ChatGPT/Claude พร้อมเนื้อหา/สคริปต์ของคลิป 3) นำ JSON ที่ได้มาวางด้านล่างแล้วกดนำเข้า</p>
+    <div class="row"><button class="btn soft" data-act="copyprompt">📋 คัดลอกพรอมต์สำหรับ AI</button><button class="btn" data-act="dljson">⬇️ ดาวน์โหลด JSON ของ Project</button><button class="btn" data-act="upjson">📂 อัปโหลดไฟล์ .json</button></div>
+    <label class="f">วาง JSON ที่นี่</label><textarea class="inp" id="jtxt" style="min-height:220px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px" placeholder='{"items":[{"t":"0:45","type":"mcq","title":"...","options":["...","..."],"answer":1}]}'></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn pri" data-act="imp" data-m="add">นำเข้า (เพิ่มต่อท้าย)</button><button class="btn" data-act="imp" data-m="rep">นำเข้า (แทนที่จุดแทรกเดิมทั้งหมด)</button></div>`;
+  }
+  const PROMPT=`คุณคือผู้ออกแบบบทเรียนวิดีโอแบบโต้ตอบ (Interactive Video Quiz) ภาษาไทย
+ฉันจะให้เนื้อหา/สคริปต์ของคลิป (พร้อมเวลา ถ้ามี) ให้คุณออกแบบจุดแทรกคำอธิบายและคำถามตามเวลาในคลิป
+
+กติกา:
+- ตอบเป็น JSON อย่างเดียว อยู่ในบล็อกโค้ดเดียว ห้ามมีข้อความอื่น
+- t คือเวลาที่ให้คลิปหยุดแล้วแสดงเนื้อหา รูปแบบ "นาที:วินาที" เช่น "1:25" (ควรแทรกหลังจบประเด็นนั้น ๆ)
+- แทรกสลับระหว่างคำอธิบายสรุป (info) และคำถาม ห่างกันอย่างน้อย 20 วินาที
+- ชนิด (type): "info" คำอธิบาย | "mcq" ปรนัยเลือกข้อเดียว | "multi" เลือกหลายข้อ | "tf" ถูก/ผิด | "fill" เติมคำ
+- mcq: options 3-4 ข้อ, answer = เลขข้อที่ถูก เริ่มนับจาก 0
+- multi: answer = อาร์เรย์เลขข้อที่ถูก เช่น [0,2]
+- tf: answer = true (ถูก) หรือ false (ผิด)
+- fill: answer = อาร์เรย์คำตอบที่ยอมรับ เช่น ["กาพย์ยานี","กาพย์ยานี 11"]
+- ทุกคำถามใส่ explain (เฉลยสั้น ๆ ให้เข้าใจ), points (ค่าเริ่มต้น 1)
+- onWrong: "continue" (ไปต่อ) | "retry" (ให้ลองใหม่) | "rewind" (ย้อนไปดูใหม่ พร้อม rewindTo เช่น "0:30")
+- ใช้ **ข้อความ** เพื่อเน้นตัวหนา ได้ใน title/body
+
+รูปแบบ:
+{
+ "title": "ชื่อบทเรียน",
+ "description": "คำอธิบายสั้น ๆ",
+ "items": [
+  {"t":"0:40","type":"info","title":"หัวข้อ","body":"สรุปประเด็นสำคัญ"},
+  {"t":"1:25","type":"mcq","title":"โจทย์","options":["ก","ข","ค","ง"],"answer":1,"explain":"เฉลย","points":1,"onWrong":"rewind","rewindTo":"0:50"}
+ ]
+}
+
+เนื้อหา/สคริปต์ของคลิป (ความยาวคลิป: ___ นาที):
+[วางที่นี่]`;
+  function doImport(txt,mode){
+    let o;try{o=JSON.parse(txt.trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim())}catch(e){return toast('JSON ไม่ถูกต้อง: '+e.message,4000)}
+    const arr=Array.isArray(o)?o:(o.items||[]);if(!arr.length)return toast('ไม่พบรายการ items');
+    const ni=arr.map(normItem).filter(it=>it.title||it.body);
+    if(mode==='rep')P.items=ni;else P.items=P.items.concat(ni);
+    sortItems(P.items);
+    if(!Array.isArray(o)){if(o.title)P.title=o.title;if(o.description)P.description=o.description;if(o.classroom)P.classroom=o.classroom}
+    mark();api&&api.refresh();tab='items';pane();toast(`นำเข้า ${ni.length} จุดแล้ว ✓ อย่าลืมกดบันทึก`)}
+
+  ACT.tab=b=>{tab=b.dataset.t;pane()};
+  ACT.back=(b,e)=>{if(dirty&&!confirm('ยังไม่ได้บันทึก ออกเลยไหม?'))e.preventDefault()};
+  ACT.save=async()=>{try{await Data.saveProject(id,P);dirty=false;$('.dirty').classList.remove('on');toast('บันทึกแล้ว ✓')}catch(e){toast('บันทึกไม่สำเร็จ: '+(e.code||e.message),4500)}};
+  ACT.copylink=()=>copyText(playLink(id));
+  ACT.openp=()=>window.open(playLink(id),'_blank');
+  ACT.plogo=async()=>{const d=await pickImage(256,false);if(d){P.logo=d;mark();pane()}};
+  ACT.rmlogo=()=>{P.logo='';mark();pane()};
+  ACT.addhere=()=>{const t=api?Math.floor(api.getTime()):0;openItem(null,'mcq',t)};
+  ACT.newitem=b=>openItem(null,b.dataset.ty,api?Math.floor(api.getTime()):0);
+  ACT.editit=b=>openItem(P.items.find(i=>i.id===b.dataset.id));
+  ACT.seekit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);api&&api.seek(it.t)};
+  ACT.showit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);api&&api.showItem(it)};
+  ACT.dupit=b=>{const it=P.items.find(i=>i.id===b.dataset.id);P.items.push(Object.assign(JSON.parse(JSON.stringify(it)),{id:'i'+uid8(),t:it.t+5}));sortItems(P.items);mark();api&&api.refresh();itemsPane()};
+  ACT.delit=b=>{if(!confirm('ลบจุดแทรกนี้?'))return;P.items=P.items.filter(i=>i.id!==b.dataset.id);mark();api&&api.refresh();itemsPane()};
+  ACT.copyprompt=()=>copyText(PROMPT);
+  ACT.imp=b=>doImport($('#jtxt').value,b.dataset.m);
+  ACT.dljson=()=>{const blob=new Blob([JSON.stringify({title:P.title,description:P.description,classroom:P.classroom,items:P.items},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(P.title||'videoquiz')+'.json';a.click()};
+  ACT.upjson=()=>{const i=document.createElement('input');i.type='file';i.accept='.json,application/json';i.onchange=async()=>{if(i.files[0]){$('#jtxt').value=await i.files[0].text();toast('โหลดไฟล์แล้ว กดนำเข้าได้เลย')}};i.click()};
+
+  /* ----- item editor modal ----- */
+  function openItem(it,type,t){
+    const isNew=!it;
+    const M=it?JSON.parse(JSON.stringify(it)):normItem({type,t:t||0,title:'',body:'',options:type==='mcq'?['','','','']:undefined,answer:type==='tf'?true:0,onWrong:'continue'});
+    if(isNew){M.id='i'+uid8();if(M.type==='mcq'||M.type==='multi')M.options=M.options&&M.options.length?M.options:['','','',''];if(M.type==='fill')M.answer=[]}
+    const bg=document.createElement('div');bg.className='modal-bg';document.body.appendChild(bg);
+    const readOpts=()=>{if(M.options)M.options=$$('.o_t',bg).map(i=>i.value)};
+    const draw=()=>{
+      const q=M.type!=='info';
+      bg.innerHTML=`<div class="modal"><h2>${isNew?'เพิ่ม':'แก้ไข'}จุดแทรก</h2><p class="hint" style="margin:0 0 6px">คลิปจะหยุดที่เวลานี้ แล้วแสดงเนื้อหาให้นักเรียน</p>
+      <div class="two"><div><label class="f">เวลา (นาที:วินาที)</label><div class="row" style="flex-wrap:nowrap"><input class="inp" id="m_t" value="${fmt(M.t)}" style="width:110px;text-align:center"><button class="btn sm" type="button" data-act="m-now">ใช้เวลาปัจจุบัน</button></div></div>
+      <div><label class="f">ชนิด</label><select class="inp" id="m_ty">${Object.entries(TYPES).map(([k,v])=>`<option value="${k}" ${M.type===k?'selected':''}>${v}</option>`).join('')}</select></div></div>
+      <label class="f">${q?'โจทย์ / หัวข้อ':'หัวข้อ'}</label><input class="inp" id="m_ti" value="${esc(M.title)}" placeholder="${q?'เช่น กาพย์ยานี 11 มีกี่คำต่อวรรค':'เช่น สรุปสิ่งที่ควรจำ'}">
+      <label class="f">รายละเอียดเพิ่มเติม (ไม่บังคับ) — ใช้ **ตัวหนา** ได้</label><textarea class="inp" id="m_bd" style="min-height:70px">${esc(M.body)}</textarea>
+      <label class="f">ลิงก์รูปภาพประกอบ (ไม่บังคับ)</label><input class="inp" id="m_im" value="${esc(M.image||'')}" placeholder="https://… (เช่น direct link จาก uploadimg)">
+      ${M.type==='mcq'||M.type==='multi'?`<label class="f">ตัวเลือก — ติ๊กข้อที่ถูก</label><div id="m_opts">${(M.options||[]).map((o,i)=>`<div class="optrow"><input type="${M.type==='mcq'?'radio':'checkbox'}" name="cor" class="o_c" ${M.type==='mcq'?(+M.answer===i?'checked':''):((M.answer||[]).includes(i)?'checked':'')}><input class="inp o_t" value="${esc(o)}" placeholder="ตัวเลือก ${LETTERS[i]||i+1}"><button class="btn sm icon danger" data-act="m-rmo" data-i="${i}" type="button">✕</button></div>`).join('')}</div>${(M.options||[]).length<8?`<button class="btn sm" data-act="m-addo" type="button">＋ เพิ่มตัวเลือก</button>`:''}`:''}
+      ${M.type==='tf'?`<label class="f">คำตอบที่ถูกต้อง</label><div class="seg" id="m_tf"><button data-v="1" class="${M.answer?'on':''}" type="button">✓ ถูก</button><button data-v="0" class="${!M.answer?'on':''}" type="button">✗ ผิด</button></div>`:''}
+      ${M.type==='fill'?`<label class="f">คำตอบที่ยอมรับ (บรรทัดละ 1 คำตอบ)</label><textarea class="inp" id="m_fill" style="min-height:70px">${esc((M.answer||[]).join('\n'))}</textarea><div class="hint">ไม่สนใจช่องว่าง/ตัวพิมพ์เล็ก-ใหญ่</div>`:''}
+      ${q?`<div class="two"><div><label class="f">คะแนน</label><input class="inp" id="m_pt" type="number" min="0" step="1" value="${pts(M)}"></div><div><label class="f">เมื่อตอบผิด</label><select class="inp" id="m_ow"><option value="continue" ${M.onWrong==='continue'?'selected':''}>แสดงเฉลยแล้วไปต่อ</option><option value="retry" ${M.onWrong==='retry'?'selected':''}>ให้ลองตอบใหม่</option><option value="rewind" ${M.onWrong==='rewind'?'selected':''}>ย้อนกลับไปดูคลิปอีกครั้ง</option></select></div></div>
+      <div id="m_rw" style="display:${M.onWrong==='rewind'?'block':'none'}"><label class="f">ย้อนไปที่เวลา</label><input class="inp" id="m_rt" value="${fmt(M.rewindTo!=null?M.rewindTo:Math.max(0,M.t-20))}" style="width:110px;text-align:center"></div>
+      <label class="f">คำอธิบายเฉลย (แสดงหลังตอบ)</label><textarea class="inp" id="m_ex" style="min-height:70px">${esc(M.explain||'')}</textarea>
+      <label class="sw"><input type="checkbox" id="m_rq" ${M.required!==false?'checked':''}><i></i>บังคับตอบ (กรอข้ามไม่ได้)</label>`:`<label class="f">ข้อความบนปุ่ม</label><input class="inp" id="m_bt" value="${esc(M.btn||'ไปต่อ')}" style="width:200px">`}
+      <div class="row" style="margin-top:18px;justify-content:flex-end"><button class="btn" data-act="m-x" type="button">ยกเลิก</button><button class="btn pri" data-act="m-ok" type="button">${isNew?'เพิ่มจุดแทรก':'บันทึก'}</button></div></div>`;
+      $('#m_ty',bg).onchange=e=>{collect(true);const old=M.type;M.type=e.target.value;
+        if((M.type==='mcq'||M.type==='multi')&&!(M.options&&M.options.length))M.options=['','','',''];
+        if(M.type==='mcq')M.answer=Array.isArray(M.answer)?(M.answer[0]||0):(typeof M.answer==='number'?M.answer:0);
+        if(M.type==='multi')M.answer=Array.isArray(M.answer)?M.answer:(typeof M.answer==='number'?[M.answer]:[]);
+        if(M.type==='tf')M.answer=true;if(M.type==='fill')M.answer=Array.isArray(M.answer)&&typeof M.answer[0]==='string'?M.answer:[];
+        if(old!==M.type)draw()};
+      const ow=$('#m_ow',bg);if(ow)ow.onchange=()=>{$('#m_rw',bg).style.display=ow.value==='rewind'?'block':'none'};
+      $$('#m_tf button',bg).forEach(b=>b.onclick=()=>{M.answer=b.dataset.v==='1';$$('#m_tf button',bg).forEach(x=>x.classList.toggle('on',x===b))});
+    };
+    function collect(soft){
+      const v=s=>{const e=$(s,bg);return e?e.value:undefined};
+      M.t=parseT(v('#m_t'));M.title=(v('#m_ti')||'').trim();M.body=(v('#m_bd')||'').trim();const im=(v('#m_im')||'').trim();if(im)M.image=im;else delete M.image;
+      if(M.type==='mcq'||M.type==='multi'){const rows=$$('.optrow',bg);M.options=rows.map(r=>$('.o_t',r).value);const cs=rows.map((r,i)=>$('.o_c',r).checked?i:-1).filter(i=>i>=0);M.answer=M.type==='mcq'?(cs[0]!=null?cs[0]:0):cs}
+      if(M.type==='fill'&&$('#m_fill',bg))M.answer=$('#m_fill',bg).value.split('\n').map(s=>s.trim()).filter(Boolean);
+      if(M.type!=='info'){M.points=+(v('#m_pt')||1);M.onWrong=v('#m_ow')||'continue';if(M.onWrong==='rewind')M.rewindTo=parseT(v('#m_rt'));M.explain=(v('#m_ex')||'').trim();const rq=$('#m_rq',bg);M.required=rq?rq.checked:true}
+      else{const bt=(v('#m_bt')||'').trim();if(bt&&bt!=='ไปต่อ')M.btn=bt;else delete M.btn}
+    }
+    draw();
+    bg.addEventListener('click',e=>{if(e.target===bg)bg.remove()});
+    Object.assign(ACT,{
+      'm-x':()=>bg.remove(),
+      'm-now':()=>{$('#m_t',bg).value=fmt(api?api.getTime():0)},
+      'm-addo':()=>{collect(true);M.options.push('');draw()},
+      'm-rmo':b=>{collect(true);const i=+b.dataset.i;M.options.splice(i,1);if(M.type==='mcq'){if(M.answer===i)M.answer=0;else if(M.answer>i)M.answer--}else M.answer=(M.answer||[]).filter(a=>a!==i).map(a=>a>i?a-1:a);draw()},
+      'm-ok':()=>{collect();
+        if(!M.title&&!M.body)return toast('ใส่หัวข้อหรือรายละเอียดอย่างน้อย 1 อย่าง');
+        if(M.type==='mcq'||M.type==='multi'){M.options=M.options.map(s=>s.trim());if(M.options.filter(Boolean).length<2)return toast('ต้องมีตัวเลือกอย่างน้อย 2 ข้อ');
+          if(M.options.some(s=>!s))return toast('มีตัวเลือกที่ยังว่างอยู่');if(M.type==='multi'&&!M.answer.length)return toast('ติ๊กข้อที่ถูกอย่างน้อย 1 ข้อ')}
+        if(M.type==='fill'&&!M.answer.length)return toast('ใส่คำตอบที่ถูกต้องอย่างน้อย 1 คำตอบ');
+        const i=P.items.findIndex(x=>x.id===M.id);if(i>=0)P.items[i]=M;else P.items.push(M);
+        sortItems(P.items);bg.remove();mark();api&&api.refresh();tab='items';pane();toast('เพิ่ม/แก้ไขแล้ว — อย่าลืมกดบันทึก')}
+    });
+  }
+  pane();
+}
+function normItem(r){
+  const type=['info','mcq','multi','tf','fill'].includes(r.type)?r.type:(r.options?'mcq':'info');
+  const it={id:r.id||'i'+uid8(),t:parseT(r.t!=null?r.t:(r.time!=null?r.time:0)),type,title:String(r.title||r.question||'').trim(),body:String(r.body||r.text||'').trim()};
+  if(r.image)it.image=String(r.image);
+  if(type==='info'){if(r.btn)it.btn=String(r.btn);return it}
+  it.points=r.points!=null&&isFinite(+r.points)?+r.points:1;
+  it.explain=String(r.explain||r.explanation||'');
+  it.onWrong=['continue','retry','rewind'].includes(r.onWrong)?r.onWrong:'continue';
+  if(it.onWrong==='rewind')it.rewindTo=r.rewindTo!=null?parseT(r.rewindTo):Math.max(0,it.t-20);
+  it.required=r.required!==false;
+  if(type==='tf')it.answer=r.answer===true||String(r.answer).toLowerCase()==='true'||r.answer==='ถูก';
+  else if(type==='fill')it.answer=(Array.isArray(r.answer)?r.answer:String(r.answer==null?'':r.answer).split('|')).map(s=>String(s).trim()).filter(Boolean);
+  else{it.options=(r.options||[]).map(String);
+    if(type==='mcq')it.answer=Number.isInteger(+r.answer)?+r.answer:0;
+    else it.answer=(Array.isArray(r.answer)?r.answer:[r.answer]).map(Number).filter(Number.isInteger)}
+  return it;
+}
+
+/* ----- results ----- */
+async function resultsView(id){
+  baseAct();app.innerHTML=`<div class="spin"></div>`;
+  let P,R;try{[P,R]=await Promise.all([Data.getProject(id),Data.listResponses(id)])}catch(e){app.innerHTML=`<div class="empty">โหลดไม่สำเร็จ: ${esc(e.code||e.message)}</div>`;return}
+  if(!P){app.innerHTML=`<div class="empty">ไม่พบ Project</div>`;return}
+  applyTheme(P);P.items=sortItems(P.items||[]);
+  const qs=P.items.filter(isQ),n=R.length,avg=n?R.reduce((a,r)=>a+(r.max?r.score/r.max*100:0),0)/n:0;
+  const dt=r=>{const m=toMs(r.ts);return m?new Date(m).toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'}):'-'};
+  app.innerHTML=topbar(`<a class="btn sm" href="#/">← กลับ</a><button class="btn sm pri" data-act="csv">⬇️ ส่งออก CSV</button>`)+`<div class="wrap"><h1 class="page">ผลการเรียน: ${esc(P.title)}</h1><p class="sub">${esc(P.classroom||'')}</p>
+  <div class="row" style="gap:14px;margin-bottom:18px;align-items:stretch"><div class="card stat"><small>ผู้เรียนที่ส่งผล</small><b class="gtext">${n}</b></div><div class="card stat"><small>คะแนนเฉลี่ย</small><b class="gtext">${avg.toFixed(0)}%</b></div><div class="card stat"><small>จำนวนคำถาม</small><b class="gtext">${qs.length}</b></div></div>
+  ${qs.length&&n?`<div class="card pane" style="margin-bottom:18px"><b>อัตราตอบถูกรายข้อ</b><div style="margin-top:12px;display:grid;gap:11px">${qs.map((q,i)=>{const a=R.filter(r=>r.answers&&r.answers[q.id]);const ok=a.filter(r=>r.answers[q.id].ok).length;const p=a.length?Math.round(ok/a.length*100):0;return `<div><div class="row" style="font-size:13.5px"><span>ข้อ ${i+1}. ${esc((q.title||'').slice(0,60))}</span><span class="sp"></span><b>${p}%</b> <small>(${ok}/${a.length})</small></div><div class="bar"><i style="width:${p}%"></i></div></div>`}).join('')}</div></div>`:''}
+  <div class="card" style="overflow:auto;max-height:560px">${n?`<table class="tb"><thead><tr><th>#</th><th>ชื่อ</th><th>${esc(P.idLabel||'ข้อมูล')}</th><th>คะแนน</th><th>ร้อยละ</th><th>เวลาที่ส่ง</th></tr></thead><tbody>${R.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.name||'(ไม่ระบุ)')}</td><td>${esc(r.extra||'')}</td><td>${r.score}/${r.max}</td><td>${r.max?Math.round(r.score/r.max*100):0}%</td><td>${dt(r)}</td></tr>`).join('')}</tbody></table>`:`<div class="empty">ยังไม่มีนักเรียนส่งผล<br>ส่งลิงก์นี้ให้นักเรียน: <b>${esc(playLink(id))}</b></div>`}</div></div>${credit()}`;
+  ACT.csv=()=>{const head=['ลำดับ','ชื่อ',P.idLabel||'ข้อมูล','คะแนน','คะแนนเต็ม','ร้อยละ','เวลาที่ส่ง','ใช้เวลา(นาที)'].concat(qs.map((q,i)=>'ข้อ '+(i+1)));
+    const rows=R.map((r,i)=>[i+1,r.name||'',r.extra||'',r.score,r.max,r.max?Math.round(r.score/r.max*100):0,dt(r),r.duration?(r.duration/60).toFixed(1):''].concat(qs.map(q=>{const a=r.answers&&r.answers[q.id];return a?(a.ok?1:0):''})));
+    const csv='﻿'+[head].concat(rows).map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=(P.title||'results')+'.csv';a.click()};
+}
+
+/* ----- student play page ----- */
+async function playView(id){
+  app.innerHTML=`<div class="spin"></div>`;
+  let P=null;try{P=await Data.getProject(id)}catch(e){console.error(e)}
+  if(!P){applyTheme(null);app.innerHTML=`<div class="login"><div class="card"><div style="font-size:42px">🔍</div><h1 class="page" style="font-size:20px">ไม่พบบทเรียนนี้</h1><p class="sub">ลิงก์อาจไม่ถูกต้อง หรือบทเรียนถูกลบไปแล้ว</p></div></div>`;return}
+  P.items=sortItems((P.items||[]).map(normItem));
+  applyTheme(P);document.title=(P.title||'บทเรียน')+' • '+(P.classroom||siteName());applySite.keepTitle=true;
+  const logo=P.logo||SITE.logo;if(!SITE.favicon&&!SITE.logo&&P.logo)setFavicon(P.logo);
+  const qn=P.items.filter(isQ).length;
+  const head=`<header class="phead">${logo?`<img src="${esc(logo)}" alt="">`:`<div class="mark">${IC.logo}</div>`}<div><div class="cls">${esc(P.classroom||'')}</div><div class="ttl">${esc(P.title||'')}</div></div></header>`;
+  const sv=(()=>{try{return JSON.parse(localStorage.getItem('vq_stu_'+id))||{}}catch(e){return {}}})();
+  app.innerHTML=`<div class="pg" style="${themeVars(P)}">${head}<main class="pmain" id="pm"><div class="card gate">${logo?`<img class="big" src="${esc(logo)}" alt="">`:''}<h2>${esc(P.title||'')}</h2><p>${esc(P.classroom||'')}</p>
+  <div class="meta"><span class="chip">❓ ${qn} คำถามในคลิป</span><span class="chip ghost">${P.orientation==='portrait'?'📱 วิดีโอแนวตั้ง':'🖥️ วิดีโอแนวนอน'}</span></div>
+  ${P.description?`<p style="margin-top:10px">${rich(P.description)}</p>`:''}
+  ${P.askName!==false?`<input class="inp" id="sn" placeholder="ชื่อ-นามสกุล" value="${esc(sv.name||'')}" autocomplete="name"><input class="inp" id="sx" placeholder="${esc(P.idLabel||'ชั้น/เลขที่')}" value="${esc(sv.extra||'')}">`:''}
+  <button class="btn pri" id="go" style="width:100%;justify-content:center;margin-top:16px;padding:13px;font-size:16px">▶ เริ่มเรียน</button></div></main>${credit()}</div>`;
+  $('#go').onclick=()=>{
+    let name='',extra='';
+    if(P.askName!==false){name=$('#sn').value.trim();extra=$('#sx').value.trim();if(!name){toast('กรอกชื่อก่อนเริ่มเรียนนะ');$('#sn').focus();return}try{localStorage.setItem('vq_stu_'+id,JSON.stringify({name,extra}))}catch(e){}}
+    const pm=$('#pm');pm.classList.add('narrow');pm.classList.toggle('narrow',P.orientation==='portrait');pm.innerHTML=`<div id="plhost"></div>${P.description?`<p class="desc">${rich(P.description)}</p>`:''}`;
+    CUR={api:null,destroy(){this.api&&this.api.destroy()}};
+    CUR.api=mountPlayer($('#plhost'),P,{onFinish:r=>Data.addResponse(id,{name,extra,score:r.score,max:r.max,answers:r.answers,duration:r.duration})});
+  };
+}
+
+/* =====================================================================
+   ROUTER
+   ===================================================================== */
+function route(){
+  cleanup();
+  const h=location.hash.replace(/^#\/?/,''),[page,id]=h.split('/');
+  if(page==='play'&&id)return playView(id);
+  if(!authReady)return;
+  if(!USER)return loginView();
+  if(page==='edit'&&id)return editView(id);
+  if(page==='results'&&id)return resultsView(id);
+  if(page==='settings')return settingsView();
+  return listView();
+}
+window.addEventListener('hashchange',route);
+applySite();
+Data.onUser(u=>{const first=!authReady;USER=u;authReady=true;
+  if(/^#\/play\//.test(location.hash))return;
+  route()});
+if(/^#\/play\//.test(location.hash)){loadSite().then(()=>{});route()}
+else loadSite();
+if(Data.mode==='firebase'&&!/^#\/play\//.test(location.hash)){/* รอ onUser */}
+</script>
+</body>
+</html>
